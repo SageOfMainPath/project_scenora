@@ -397,7 +397,7 @@ class ScenoraApiClient {
             retryAuthentication: false,
           );
           await _saveSession(refreshed);
-          return _request(
+          return await _request(
             method,
             path,
             body: body,
