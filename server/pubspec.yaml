@@ -1,0 +1,17 @@
+name: scenora_backend
+description: REST backend for the SCENORA Flutter application.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  crypto: ^3.0.6
+  postgres: ^3.6.0
+  shelf: ^1.4.2
+  shelf_router: ^1.1.4
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.26.0

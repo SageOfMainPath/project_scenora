@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SCENORA — Final Project Report</title>
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 18mm 20mm;
+    @bottom-center { content: "SCENORA  •  " counter(page); font: 9pt Arial, sans-serif; color: #666; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; color: #20242a; font: 11pt/1.55 "Times New Roman", serif; }
+  h1, h2, h3, h4 { color: #741a2a; font-family: Arial, sans-serif; page-break-after: avoid; }
+  h1 { margin: 0 0 18px; font-size: 22pt; border-bottom: 2px solid #a51d35; padding-bottom: 7px; }
+  h2 { margin: 22px 0 9px; font-size: 15pt; }
+  h3 { margin: 17px 0 6px; font-size: 12.5pt; color: #353b45; }
+  p { margin: 0 0 10px; text-align: justify; }
+  ul, ol { margin: 6px 0 12px 24px; }
+  li { margin: 3px 0; }
+  a { color: #741a2a; text-decoration: none; }
+  .cover { height: 257mm; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; page-break-after: always; }
+  .cover h1 { border: 0; font-size: 34pt; letter-spacing: 5px; margin: 0; }
+  .cover .subtitle { font: 17pt/1.35 Arial, sans-serif; color: #4d5561; margin: 8px 0 30px; }
+  .cover .course { font: bold 14pt Arial, sans-serif; margin: 12px 0 26px; }
+  .cover table { width: 78%; margin: 10px auto 30px; border-collapse: collapse; }
+  .cover td { padding: 7px 10px; border-bottom: 1px solid #ddd; text-align: left; }
+  .cover .meta { margin-top: 12px; font: 11pt/1.7 Arial, sans-serif; }
+  .chapter { page-break-before: always; }
+  .prelim { page-break-before: always; }
+  .toc table { width: 100%; border-collapse: collapse; font-size: 8.8pt; line-height: 1.12; }
+  .toc td { padding: 1.5px 0; border: 0; }
+  .toc td:last-child { text-align: right; width: 45px; }
+  .toc .major td { padding-top: 8px; font-weight: bold; color: #741a2a; }
+  table.grid { width: 100%; border-collapse: collapse; margin: 10px 0 16px; font-size: 9.8pt; page-break-inside: avoid; }
+  table.grid th, table.grid td { border: 1px solid #b8bec7; padding: 6px 7px; vertical-align: top; }
+  table.grid th { background: #f4e8eb; font-family: Arial, sans-serif; text-align: left; }
+  .figure { margin: 16px auto 20px; text-align: center; page-break-inside: avoid; }
+  .figure svg { width: 100%; max-height: 590px; border: 1px solid #d7dbe1; background: #fff; }
+  .caption { margin-top: 5px; font-size: 9.5pt; font-style: italic; text-align: center; color: #555; }
+  .note { border-left: 4px solid #a51d35; background: #f8f1f3; padding: 9px 12px; margin: 12px 0; }
+  .code { white-space: pre-wrap; border: 1px solid #cbd1d8; border-radius: 4px; background: #f5f7f9; padding: 10px 12px; font: 8.7pt/1.4 Consolas, monospace; page-break-inside: avoid; }
+  .screen-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 15px 0; }
+  .phone { height: 330px; border: 8px solid #252931; border-radius: 28px; padding: 13px 9px; background: #fafafa; position: relative; page-break-inside: avoid; }
+  .phone:before { content: ""; width: 52px; height: 5px; background: #252931; border-radius: 5px; position: absolute; top: 4px; left: calc(50% - 26px); }
+  .phone h4 { margin: 8px 0 10px; font-size: 10pt; text-align: center; color: #8c1830; }
+  .bar { height: 22px; background: #8c1830; color: white; padding: 3px 6px; font: 7pt Arial; margin-bottom: 8px; }
+  .card { border: 1px solid #ddd; border-radius: 7px; padding: 7px; margin: 6px 0; font: 7pt/1.35 Arial; text-align: left; }
+  .poster { float: left; width: 30px; height: 42px; background: linear-gradient(145deg,#9a1e37,#282d38); margin-right: 6px; border-radius: 3px; }
+  .placeholder { border: 2px dashed #aeb4bd; background: #fafbfc; height: 285px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 25px; color: #69717d; font: 12pt/1.5 Arial; margin: 12px 0 18px; page-break-inside: avoid; }
+  .screenshot-overview { display: block; width: 100%; max-height: 225mm; object-fit: contain; margin: 12px auto 6px; border: 1px solid #d5d9df; }
+  .screenshot-spread { display: flex; gap: 16px; justify-content: center; align-items: flex-start; margin: 15px 0 18px; page-break-inside: avoid; }
+  .screenshot-card { width: 47%; text-align: center; page-break-inside: avoid; }
+  .screen-window { height: 155mm; overflow: hidden; border: 6px solid #262a31; border-radius: 22px; background: #080a10; box-shadow: 0 5px 15px #bbb; }
+  .screen-window img { width: 100%; height: auto; display: block; transform: translateY(-3.1%); }
+  .screenshot-card.single { width: 54%; }
+  .screenshot-card.single .screen-window { height: 178mm; }
+  .page-break { page-break-before: always; }
+  .small { font-size: 9.5pt; color: #555; }
+  .center { text-align: center; }
+  .refs li { margin-bottom: 7px; }
+  .tag { display: inline-block; padding: 2px 7px; margin: 2px; border-radius: 12px; background: #f1dce1; color: #741a2a; font: 8.5pt Arial; }
+  @media screen { body { max-width: 210mm; margin: 20px auto; padding: 18mm; box-shadow: 0 0 25px #bbb; } .cover { height: 245mm; } }
+  @media print { body { max-width: none; } }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <h1>SCENORA</h1>
+  <div class="subtitle">A Social Movie and Series Review Community</div>
+  <div class="course">Final Project Report<br>CSE 4104 — Software Development Project II</div>
+  <p class="center"><strong>Submitted by</strong></p>
+  <table>
+    <tr><td>23524202047</td><td>Mainul</td></tr>
+    <tr><td>23524202051</td><td>Rony</td></tr>
+    <tr><td>23524202095</td><td>Emon</td></tr>
+    <tr><td>23524202129</td><td>Shifat</td></tr>
+  </table>
+  <div class="meta">
+    Department of Computer Science and Engineering<br>
+    <strong>Bangladesh University of Professionals (BUP)</strong><br>
+    Submitted to: <strong>Iyolita Islam and Sharad Hasan</strong><br>
+    Submission Date: <strong>9 November 2026</strong>
+  </div>
+</section>
+
+<section class="prelim">
+  <h1>Abstract</h1>
+  <p>SCENORA is a Flutter-based Android application designed to bring movie discovery, personal reviewing, and social discussion into one accessible platform. Movie enthusiasts commonly use separate services to find film information, record opinions, communicate with friends, and follow community reactions. SCENORA addresses this fragmented experience through a single application where a user can create an account, search real movie data, view posters and details, publish star-rated reviews, maintain a watchlist, like and comment on reviews, receive activity updates, and participate in a shared community Shoutbox.</p>
+  <p>The client application is developed with Flutter and Dart using a reusable screen–model–widget structure. A custom Dart REST backend, built with Shelf and Shelf Router, provides authentication, profile, movie, review, interaction, watchlist, activity, and chat services. Development data is persisted atomically in JSON, while The Movie Database (TMDB) API supplies live movie metadata. Passwords are protected with a salted PBKDF2-style HMAC-SHA-256 derivation, access and refresh tokens are used for sessions, and mobile tokens are held in secure storage. A Cloudflare Quick Tunnel enables an Android phone on another network to reach the local demonstration server through HTTPS.</p>
+  <p>The resulting MVP runs as an installable Android application and demonstrates end-to-end mobile development, API integration, persistent multi-user data, security controls, and cross-device interaction. Automated backend tests cover the principal workflow, while widget and manual tests verify the mobile interface. The project establishes a practical foundation for future production deployment with a managed database, stable cloud hosting, WebSocket chat, push notifications, moderation, and media storage.</p>
+  <p><strong>Keywords:</strong> Flutter, Android, Dart, REST API, Shelf, TMDB, social reviewing, Cloudflare Tunnel.</p>
+</section>
+
+<section class="prelim toc">
+  <h1>Table of Contents</h1>
+  <table>
+    <tr><td>Abstract</td><td>2</td></tr>
+    <tr><td>Table of Contents</td><td>3</td></tr>
+    <tr class="major"><td>1. Introduction</td><td>4</td></tr>
+    <tr><td>1.1 Project Overview</td><td>4</td></tr>
+    <tr><td>1.2 Problem Statement</td><td>4</td></tr>
+    <tr><td>1.3 Objectives / Goals</td><td>4</td></tr>
+    <tr><td>1.4 Scope of the Project</td><td>4</td></tr>
+    <tr><td>1.5 Target Users</td><td>5</td></tr>
+    <tr><td>1.6 Limitations</td><td>5</td></tr>
+    <tr class="major"><td>2. Literature Review / Related Work</td><td>6</td></tr>
+    <tr><td>2.1 Distinguishing Characteristics</td><td>6</td></tr>
+    <tr><td>2.2 Technical References</td><td>6</td></tr>
+    <tr class="major"><td>3. Requirement Analysis</td><td>7</td></tr>
+    <tr><td>3.1 Functional Requirements</td><td>7</td></tr>
+    <tr><td>3.2 Non-Functional Requirements</td><td>8</td></tr>
+    <tr><td>3.3 Hardware Requirements</td><td>8</td></tr>
+    <tr><td>3.4 Software Requirements</td><td>9</td></tr>
+    <tr class="major"><td>4. System Design</td><td>10</td></tr>
+    <tr><td>4.1 Architecture Diagram</td><td>10</td></tr>
+    <tr><td>4.2 Use Case Diagram</td><td>11</td></tr>
+    <tr><td>4.3 Activity Diagram / Flowchart</td><td>12</td></tr>
+    <tr><td>4.4 Database Design</td><td>12</td></tr>
+    <tr><td>4.5 UI Design</td><td>13</td></tr>
+    <tr class="major"><td>5. Implementation / Development</td><td>15</td></tr>
+    <tr><td>5.1 Tools &amp; Technologies</td><td>15</td></tr>
+    <tr><td>5.2 Module Description</td><td>15</td></tr>
+    <tr><td>5.3 Key Code Snippets</td><td>16</td></tr>
+    <tr><td>5.4 Screenshots</td><td>17</td></tr>
+    <tr class="major"><td>6. Testing</td><td>22</td></tr>
+    <tr><td>6.1 Testing Strategy</td><td>22</td></tr>
+    <tr><td>6.2 Bugs Found &amp; Fixes</td><td>23</td></tr>
+    <tr class="major"><td>7. Results and Discussion</td><td>24</td></tr>
+    <tr><td>7.1 Final Working Output</td><td>24</td></tr>
+    <tr><td>7.2 Performance Observations</td><td>24</td></tr>
+    <tr><td>7.3 What Went Well</td><td>24</td></tr>
+    <tr><td>7.4 Challenges and Trade-offs</td><td>24</td></tr>
+    <tr><td>7.5 User Feedback</td><td>25</td></tr>
+    <tr class="major"><td>8. Conclusion and Future Work</td><td>26</td></tr>
+    <tr><td>8.1 Conclusion</td><td>26</td></tr>
+    <tr><td>8.2 Future Enhancements</td><td>26</td></tr>
+    <tr class="major"><td>References</td><td>27</td></tr>
+    <tr class="major"><td>Appendix A — Main REST Endpoints</td><td>28</td></tr>
+  </table>
+</section>
+
+<section class="chapter">
+  <h1>1. Introduction</h1>
+  <h2>1.1 Project Overview</h2>
+  <p>SCENORA is a social movie and series review application developed primarily for Android. It connects content discovery with user-generated reviews and community interaction. Guests may browse community reviews, movie information, comments, and Shoutbox messages. Registered members gain access to protected actions such as publishing a review, liking and commenting, maintaining a watchlist, updating a profile, and sending community messages.</p>
+  <p>The system has two principal components. The Flutter mobile client renders the user interface and communicates through an API client. The independent Dart backend validates requests, authenticates users, applies business rules, calls TMDB, and persists application data. This separation makes the mobile interface easier to maintain and ensures secrets such as TMDB credentials remain on the server.</p>
+
+  <h2>1.2 Problem Statement</h2>
+  <p>Movie viewers often move between a discovery website, a note-taking or diary application, a social network, and a messaging service to complete one simple cycle: find a film, watch it, record an opinion, and discuss it. General social networks do not structure posts around movie metadata, while large movie databases may feel complex to a casual user. There is therefore a need for a focused, easy-to-use mobile experience that combines reliable movie information with human reviews and lightweight community interaction.</p>
+  <p>A second development problem is demonstrating a real client–server application from a classroom network. A backend hosted on a student laptop normally has a local IP address that changes across Wi-Fi and mobile hotspots. SCENORA solves the demonstration issue by allowing the backend address to be edited in the application and by supporting a temporary Cloudflare HTTPS tunnel.</p>
+
+  <h2>1.3 Objectives / Goals</h2>
+  <ul>
+    <li>Develop an installable Android application with a consistent Material interface.</li>
+    <li>Implement account registration, login, logout, profile management, and restored sessions.</li>
+    <li>Integrate TMDB search, popular titles, details, ratings, genres, and poster images.</li>
+    <li>Enable members to publish reviews with a 1–5 star rating and spoiler status.</li>
+    <li>Support likes, comments, follows, watchlists, activity notifications, and community chat.</li>
+    <li>Protect credentials through server-side secret storage, password derivation, token hashing, and secure mobile storage.</li>
+    <li>Provide persistent multi-user data and a repeatable classroom demonstration workflow.</li>
+  </ul>
+
+  <h2>1.4 Scope of the Project</h2>
+  <p>The implemented scope covers an Android Flutter client, a Dart REST backend, JSON persistence, TMDB integration, and temporary public connectivity. The client includes Home, Explore, Movie Detail, Review Composer, Shoutbox, Activity, Login/Register, and Profile interfaces. The API includes authentication, profiles, follows, movies, watchlists, reviews, likes, comments, activity, and messages.</p>
+  <p>The project is an academic MVP rather than a public commercial service. Its purpose is to demonstrate software design, working features, secure data flow, testing, and realistic integration decisions.</p>
+
+  <h2>1.5 Target Users</h2>
+  <ul>
+    <li>Students and casual viewers who want quick movie discovery.</li>
+    <li>Movie enthusiasts who want to publish and discuss reviews.</li>
+    <li>Friends or small communities who want a shared watchlist and conversation space.</li>
+    <li>Project evaluators who need a clear demonstration of a full client–server mobile system.</li>
+  </ul>
+
+  <h2>1.6 Limitations</h2>
+  <ul>
+    <li>The classroom backend uses a local JSON file rather than a scalable production database.</li>
+    <li>A Cloudflare Quick Tunnel URL is temporary and changes after the tunnel restarts.</li>
+    <li>Shoutbox updates use four-second polling, not a persistent WebSocket connection.</li>
+    <li>Push notifications, email verification, password reset email, image upload storage, and an administrator dashboard are not yet implemented.</li>
+    <li>The release APK currently uses a development signing configuration and is not prepared for Play Store publication.</li>
+    <li>Availability of live search depends on the backend, internet connection, and TMDB service.</li>
+  </ul>
+</section>
+
+<section class="chapter">
+  <h1>2. Literature Review / Related Work</h1>
+  <p>SCENORA was informed by three categories of software: movie databases, review diaries, and social discussion services. IMDb and TMDB demonstrate structured movie search, cast and metadata presentation. Letterboxd demonstrates the value of a personal movie diary and social reviews. General group-chat products demonstrate immediate, low-friction community discussion. SCENORA selects the most relevant concepts for a focused academic application without attempting to reproduce the scale of those platforms.</p>
+
+  <table class="grid">
+    <tr><th>System / Category</th><th>Relevant Capability</th><th>SCENORA Interpretation</th></tr>
+    <tr><td>IMDb</td><td>Large catalogue, search, ratings, and title information.</td><td>SCENORA provides a smaller mobile-first discovery flow and connects title data directly to community reviews.</td></tr>
+    <tr><td>TMDB</td><td>Developer API for movie metadata and images.</td><td>The backend proxies TMDB requests, caches selected data, and prevents API credentials from being embedded in the APK.</td></tr>
+    <tr><td>Letterboxd</td><td>Movie diary, ratings, reviews, lists, and social interaction.</td><td>SCENORA uses a concise review feed, watchlist, likes, comments, and activity flow suitable for the course scope.</td></tr>
+    <tr><td>Community chat</td><td>Rapid discussion among multiple users.</td><td>The shared Shoutbox provides a simple group conversation connected to the same authenticated community.</td></tr>
+  </table>
+
+  <h2>2.1 Distinguishing Characteristics</h2>
+  <ul>
+    <li>A single codebase combines the mobile interface and a custom purpose-built REST API.</li>
+    <li>Movie search, review creation, interaction notifications, and group discussion are available in one navigation shell.</li>
+    <li>The application can switch backend URLs at runtime, so an APK does not need rebuilding when the demonstration network changes.</li>
+    <li>TMDB secrets remain in a server <code>.env</code> file and are never requested from the mobile user.</li>
+    <li>The project can return cached demonstration movies if TMDB credentials are unavailable.</li>
+  </ul>
+
+  <h2>2.2 Technical References</h2>
+  <p>Flutter and Material Design guidance informed the interface and navigation. Dart and Shelf documentation informed the API implementation. TMDB developer documentation informed movie endpoints and image paths. OWASP guidance influenced password storage and token handling, and Cloudflare documentation informed the temporary HTTPS tunnel used for demonstration. Full links are listed in the References section.</p>
+</section>
+
+<section class="chapter">
+  <h1>3. Requirement Analysis</h1>
+  <h2>3.1 Functional Requirements</h2>
+  <table class="grid">
+    <tr><th>ID</th><th>Requirement</th><th>Actor</th><th>Status</th></tr>
+    <tr><td>FR-01</td><td>Register a unique account using username, email, and password.</td><td>Guest</td><td>Implemented</td></tr>
+    <tr><td>FR-02</td><td>Log in, restore a valid session, refresh tokens, and log out.</td><td>Member</td><td>Implemented</td></tr>
+    <tr><td>FR-03</td><td>Search movies and view title, poster, year, genre, rating, and overview.</td><td>Guest</td><td>Implemented</td></tr>
+    <tr><td>FR-04</td><td>Create a review with rating, text, and spoiler flag.</td><td>Member</td><td>Implemented</td></tr>
+    <tr><td>FR-05</td><td>View community reviews and their interaction counts.</td><td>Guest</td><td>Implemented</td></tr>
+    <tr><td>FR-06</td><td>Like/unlike and comment on a review after authentication.</td><td>Member</td><td>Implemented</td></tr>
+    <tr><td>FR-07</td><td>Add or remove a movie from a personal watchlist.</td><td>Member</td><td>Implemented</td></tr>
+    <tr><td>FR-08</td><td>View and edit display name, biography, and location.</td><td>Member</td><td>Implemented</td></tr>
+    <tr><td>FR-09</td><td>Receive activity entries for likes, comments, and follows from others.</td><td>Member</td><td>Implemented</td></tr>
+    <tr><td>FR-10</td><td>Read Shoutbox messages publicly and send messages when logged in.</td><td>Guest / Member</td><td>Implemented</td></tr>
+    <tr><td>FR-11</td><td>Change and validate the backend server URL without rebuilding the APK.</td><td>User</td><td>Implemented</td></tr>
+    <tr><td>FR-12</td><td>Switch between light and dark appearance.</td><td>User</td><td>Implemented</td></tr>
+  </table>
+
+  <h2>3.2 Non-Functional Requirements</h2>
+  <table class="grid">
+    <tr><th>Category</th><th>Requirement and Implementation</th></tr>
+    <tr><td>Usability</td><td>Bottom navigation exposes the five main destinations; labels, validation messages, empty states, and consistent Material components reduce learning effort.</td></tr>
+    <tr><td>Performance</td><td>Small JSON payloads, server compression, limited result sets, debounced search, and periodic background refresh keep the MVP responsive.</td></tr>
+    <tr><td>Security</td><td>Protected routes require bearer tokens; passwords use salt and iterative HMAC-SHA-256 derivation; raw tokens are not persisted by the server; mobile tokens use secure storage.</td></tr>
+    <tr><td>Reliability</td><td>Atomic JSON saves use a temporary file before replacement; health checks validate connectivity; cached movie data provides a fallback.</td></tr>
+    <tr><td>Maintainability</td><td>Client screens, models, widgets, theme, and API client are separated; server API, security, storage, and startup concerns are separated.</td></tr>
+    <tr><td>Compatibility</td><td>The Android client targets the Flutter-configured SDK range and was tested on a modern Samsung Android phone.</td></tr>
+    <tr><td>Privacy</td><td>Public API representations exclude password hashes and salts. The report and client never expose TMDB credentials or token pepper values.</td></tr>
+    <tr><td>Offline behavior</td><td>Full social functionality requires a server connection. The backend can serve seeded movie data if TMDB is unavailable, but the mobile app is not designed as fully offline software.</td></tr>
+  </table>
+
+  <h2>3.3 Hardware Requirements</h2>
+  <table class="grid">
+    <tr><th>Component</th><th>Minimum / Recommended Requirement</th></tr>
+    <tr><td>Development computer</td><td>64-bit Windows 10/11, dual-core CPU or better, 8 GB RAM recommended, and sufficient storage for Flutter SDK and Android build tools.</td></tr>
+    <tr><td>Android test device</td><td>Flutter-supported Android version, approximately 100 MB free storage, internet connectivity; Samsung Galaxy S23 Ultra was used for practical installation testing.</td></tr>
+    <tr><td>Network</td><td>Wi-Fi or mobile data for TMDB and tunnel access. The phone and computer do not need the same LAN when Cloudflare Tunnel is active.</td></tr>
+  </table>
+
+  <h2>3.4 Software Requirements</h2>
+  <table class="grid">
+    <tr><th>Software</th><th>Purpose</th></tr>
+    <tr><td>Flutter SDK and Dart 3</td><td>Mobile application and backend language/runtime.</td></tr>
+    <tr><td>Visual Studio Code</td><td>Source editing, terminal, debugging, and project management.</td></tr>
+    <tr><td>Android SDK / Gradle / Java 17</td><td>Compiling and packaging the Android APK.</td></tr>
+    <tr><td>Material Design / Cupertino Icons</td><td>Consistent interface components and icons.</td></tr>
+    <tr><td>shared_preferences 2.5.3</td><td>Persistent local application settings, including selected backend address and theme preference.</td></tr>
+    <tr><td>flutter_secure_storage 9.2.4</td><td>Protected storage of access and refresh tokens on the device.</td></tr>
+    <tr><td>Shelf 1.4.2 and Shelf Router 1.1.4</td><td>REST server pipeline and route handling.</td></tr>
+    <tr><td>crypto 3.0.6</td><td>Password derivation and token hashing primitives.</td></tr>
+    <tr><td>TMDB REST API</td><td>Live movie discovery, metadata, and poster paths.</td></tr>
+    <tr><td>Cloudflared</td><td>Temporary public HTTPS access to the local classroom server.</td></tr>
+  </table>
+</section>
+
+<section class="chapter">
+  <h1>4. System Design</h1>
+  <h2>4.1 Architecture Diagram</h2>
+  <p>The system uses a layered client–server architecture. The Flutter presentation layer calls a centralized API client. Requests travel over HTTP locally or HTTPS through the demonstration tunnel. Shelf routes each request to application logic, which accesses security, TMDB, and JSON persistence services.</p>
+  <div class="figure">
+    <svg viewBox="0 0 900 500" role="img" aria-label="SCENORA architecture diagram">
+      <defs><marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#777"/></marker></defs>
+      <rect x="40" y="55" width="210" height="330" rx="22" fill="#f7edf0" stroke="#8c1830" stroke-width="3"/>
+      <text x="145" y="90" text-anchor="middle" font-family="Arial" font-size="22" font-weight="bold" fill="#741a2a">Flutter Android App</text>
+      <rect x="72" y="120" width="145" height="45" rx="8" fill="white" stroke="#9aa1aa"/><text x="145" y="148" text-anchor="middle" font-family="Arial" font-size="16">Screens & Widgets</text>
+      <rect x="72" y="190" width="145" height="45" rx="8" fill="white" stroke="#9aa1aa"/><text x="145" y="218" text-anchor="middle" font-family="Arial" font-size="16">Models & Theme</text>
+      <rect x="72" y="260" width="145" height="45" rx="8" fill="white" stroke="#9aa1aa"/><text x="145" y="288" text-anchor="middle" font-family="Arial" font-size="16">API Client</text>
+      <rect x="72" y="330" width="145" height="35" rx="8" fill="#fff" stroke="#9aa1aa"/><text x="145" y="352" text-anchor="middle" font-family="Arial" font-size="13">Secure / Local Storage</text>
+      <rect x="330" y="180" width="190" height="90" rx="12" fill="#eef4fa" stroke="#3975a7" stroke-width="2"/>
+      <text x="425" y="215" text-anchor="middle" font-family="Arial" font-size="19" font-weight="bold">Cloudflare Tunnel</text><text x="425" y="243" text-anchor="middle" font-family="Arial" font-size="15">Temporary HTTPS URL</text>
+      <line x1="250" y1="225" x2="327" y2="225" stroke="#777" stroke-width="3" marker-end="url(#arrow)"/><text x="288" y="210" text-anchor="middle" font-family="Arial" font-size="13">JSON/HTTPS</text>
+      <rect x="600" y="45" width="250" height="350" rx="18" fill="#f4f6f8" stroke="#4d5561" stroke-width="3"/>
+      <text x="725" y="80" text-anchor="middle" font-family="Arial" font-size="22" font-weight="bold">Dart Backend</text>
+      <rect x="635" y="105" width="180" height="50" rx="8" fill="white" stroke="#9aa1aa"/><text x="725" y="135" text-anchor="middle" font-family="Arial" font-size="16">Shelf + Router</text>
+      <rect x="635" y="180" width="180" height="50" rx="8" fill="white" stroke="#9aa1aa"/><text x="725" y="210" text-anchor="middle" font-family="Arial" font-size="16">Business Rules</text>
+      <rect x="635" y="255" width="180" height="50" rx="8" fill="white" stroke="#9aa1aa"/><text x="725" y="285" text-anchor="middle" font-family="Arial" font-size="16">Security Service</text>
+      <rect x="625" y="330" width="95" height="45" rx="8" fill="#fff4d8" stroke="#b89028"/><text x="672" y="358" text-anchor="middle" font-family="Arial" font-size="14">db.json</text>
+      <rect x="730" y="330" width="95" height="45" rx="8" fill="#e9f5eb" stroke="#4c9455"/><text x="777" y="358" text-anchor="middle" font-family="Arial" font-size="14">TMDB API</text>
+      <line x1="520" y1="225" x2="597" y2="225" stroke="#777" stroke-width="3" marker-end="url(#arrow)"/>
+      <text x="450" y="455" text-anchor="middle" font-family="Arial" font-size="15" fill="#555">Client presentation → API boundary → server logic → persistence / external movie provider</text>
+    </svg>
+    <div class="caption">Figure 4.1: High-level SCENORA client–server architecture.</div>
+  </div>
+
+  <h2>4.2 Use Case Diagram</h2>
+  <div class="figure">
+    <svg viewBox="0 0 900 620" role="img" aria-label="SCENORA use case diagram">
+      <rect x="185" y="30" width="535" height="555" rx="12" fill="#fbfbfc" stroke="#6d7480" stroke-width="2"/><text x="452" y="60" text-anchor="middle" font-family="Arial" font-size="20" font-weight="bold">SCENORA System</text>
+      <circle cx="85" cy="180" r="20" fill="none" stroke="#222" stroke-width="3"/><line x1="85" y1="200" x2="85" y2="275" stroke="#222" stroke-width="3"/><line x1="50" y1="225" x2="120" y2="225" stroke="#222" stroke-width="3"/><line x1="85" y1="275" x2="55" y2="320" stroke="#222" stroke-width="3"/><line x1="85" y1="275" x2="115" y2="320" stroke="#222" stroke-width="3"/><text x="85" y="350" text-anchor="middle" font-family="Arial" font-size="17">Guest</text>
+      <circle cx="815" cy="180" r="20" fill="none" stroke="#222" stroke-width="3"/><line x1="815" y1="200" x2="815" y2="275" stroke="#222" stroke-width="3"/><line x1="780" y1="225" x2="850" y2="225" stroke="#222" stroke-width="3"/><line x1="815" y1="275" x2="785" y2="320" stroke="#222" stroke-width="3"/><line x1="815" y1="275" x2="845" y2="320" stroke="#222" stroke-width="3"/><text x="815" y="350" text-anchor="middle" font-family="Arial" font-size="17">Member</text>
+      <g fill="#fff" stroke="#8c1830" stroke-width="2" font-family="Arial" font-size="14" text-anchor="middle">
+        <ellipse cx="335" cy="115" rx="110" ry="32"/><text x="335" y="120" fill="#222" stroke="none">Browse Reviews</text>
+        <ellipse cx="335" cy="205" rx="110" ry="32"/><text x="335" y="210" fill="#222" stroke="none">Search Movies</text>
+        <ellipse cx="335" cy="295" rx="110" ry="32"/><text x="335" y="300" fill="#222" stroke="none">Register / Login</text>
+        <ellipse cx="335" cy="385" rx="110" ry="32"/><text x="335" y="390" fill="#222" stroke="none">Read Shoutbox</text>
+        <ellipse cx="335" cy="475" rx="110" ry="32"/><text x="335" y="480" fill="#222" stroke="none">View Comments</text>
+        <ellipse cx="575" cy="115" rx="110" ry="32"/><text x="575" y="120" fill="#222" stroke="none">Publish Review</text>
+        <ellipse cx="575" cy="205" rx="110" ry="32"/><text x="575" y="210" fill="#222" stroke="none">Like / Comment</text>
+        <ellipse cx="575" cy="295" rx="110" ry="32"/><text x="575" y="300" fill="#222" stroke="none">Manage Watchlist</text>
+        <ellipse cx="575" cy="385" rx="110" ry="32"/><text x="575" y="390" fill="#222" stroke="none">Send Message</text>
+        <ellipse cx="575" cy="475" rx="110" ry="32"/><text x="575" y="480" fill="#222" stroke="none">Profile & Activity</text>
+      </g>
+      <g stroke="#777" stroke-width="2"><line x1="120" y1="225" x2="225" y2="120"/><line x1="120" y1="225" x2="225" y2="205"/><line x1="120" y1="225" x2="225" y2="295"/><line x1="120" y1="225" x2="225" y2="385"/><line x1="120" y1="225" x2="225" y2="475"/><line x1="780" y1="225" x2="685" y2="115"/><line x1="780" y1="225" x2="685" y2="205"/><line x1="780" y1="225" x2="685" y2="295"/><line x1="780" y1="225" x2="685" y2="385"/><line x1="780" y1="225" x2="685" y2="475"/></g>
+      <text x="450" y="555" text-anchor="middle" font-family="Arial" font-size="14" fill="#555">Members can also perform all public guest use cases.</text>
+    </svg>
+    <div class="caption">Figure 4.2: Guest and registered-member use cases.</div>
+  </div>
+
+  <h2>4.3 Activity Diagram / Flowchart</h2>
+  <div class="figure">
+    <svg viewBox="0 0 900 590" role="img" aria-label="Review workflow activity diagram">
+      <defs><marker id="a2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#777"/></marker></defs>
+      <g font-family="Arial" text-anchor="middle">
+        <ellipse cx="450" cy="35" rx="58" ry="24" fill="#313640"/><text x="450" y="41" fill="white" font-size="15">Start</text>
+        <rect x="345" y="90" width="210" height="55" rx="10" fill="#f7edf0" stroke="#8c1830" stroke-width="2"/><text x="450" y="123" font-size="16">Search and select movie</text>
+        <polygon points="450,180 545,230 450,280 355,230" fill="#fff4d8" stroke="#b89028" stroke-width="2"/><text x="450" y="225" font-size="15">Logged in?</text>
+        <rect x="95" y="205" width="175" height="52" rx="10" fill="#eef4fa" stroke="#3975a7" stroke-width="2"/><text x="182" y="236" font-size="15">Register or login</text>
+        <rect x="345" y="320" width="210" height="60" rx="10" fill="#f7edf0" stroke="#8c1830" stroke-width="2"/><text x="450" y="345" font-size="15">Enter rating, review text</text><text x="450" y="365" font-size="15">and spoiler status</text>
+        <polygon points="450,415 545,465 450,515 355,465" fill="#fff4d8" stroke="#b89028" stroke-width="2"/><text x="450" y="460" font-size="15">Valid input?</text>
+        <rect x="635" y="435" width="175" height="60" rx="10" fill="#fdecee" stroke="#b23b4c" stroke-width="2"/><text x="722" y="460" font-size="15">Show validation</text><text x="722" y="480" font-size="15">message</text>
+        <rect x="95" y="435" width="175" height="60" rx="10" fill="#e9f5eb" stroke="#4c9455" stroke-width="2"/><text x="182" y="460" font-size="15">Save review and</text><text x="182" y="480" font-size="15">refresh feed</text>
+        <ellipse cx="182" cy="555" rx="58" ry="24" fill="#313640"/><text x="182" y="561" fill="white" font-size="15">End</text>
+      </g>
+      <g stroke="#777" stroke-width="3" fill="none" marker-end="url(#a2)"><line x1="450" y1="59" x2="450" y2="87"/><line x1="450" y1="145" x2="450" y2="177"/><line x1="355" y1="230" x2="273" y2="230"/><path d="M182 205 V115 H342"/><line x1="450" y1="280" x2="450" y2="317"/><line x1="450" y1="380" x2="450" y2="412"/><line x1="355" y1="465" x2="273" y2="465"/><line x1="545" y1="465" x2="632" y2="465"/><path d="M722 435 V350 H558"/><line x1="182" y1="495" x2="182" y2="528"/></g>
+      <text x="316" y="217" font-family="Arial" font-size="13">No</text><text x="470" y="305" font-family="Arial" font-size="13">Yes</text><text x="312" y="452" font-family="Arial" font-size="13">Yes</text><text x="575" y="452" font-family="Arial" font-size="13">No</text>
+    </svg>
+    <div class="caption">Figure 4.3: Review publication workflow.</div>
+  </div>
+
+  <h2>4.4 Database Design</h2>
+  <p>The development database is a JSON document containing table-like arrays. Identifiers use a prefix, timestamp component, and secure random component. Atomic saving first writes a temporary file and then replaces the primary database file. The logical relationships are shown below.</p>
+  <div class="figure">
+    <svg viewBox="0 0 900 630" role="img" aria-label="SCENORA ER diagram">
+      <defs><marker id="er" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#777"/></marker></defs>
+      <g font-family="Arial">
+        <g transform="translate(35,40)"><rect width="220" height="155" rx="7" fill="#f7edf0" stroke="#8c1830" stroke-width="2"/><rect width="220" height="32" rx="7" fill="#8c1830"/><text x="110" y="22" text-anchor="middle" fill="white" font-weight="bold">USERS</text><text x="12" y="53" font-size="13">PK id</text><text x="12" y="75" font-size="13">username, email, displayName</text><text x="12" y="97" font-size="13">passwordSalt, passwordHash</text><text x="12" y="119" font-size="13">bio, location, avatarUrl</text><text x="12" y="141" font-size="13">createdAt, updatedAt</text></g>
+        <g transform="translate(340,35)"><rect width="220" height="140" rx="7" fill="#eef4fa" stroke="#3975a7" stroke-width="2"/><rect width="220" height="32" rx="7" fill="#3975a7"/><text x="110" y="22" text-anchor="middle" fill="white" font-weight="bold">REVIEWS</text><text x="12" y="53" font-size="13">PK id, FK userId, FK movieId</text><text x="12" y="75" font-size="13">rating, text</text><text x="12" y="97" font-size="13">containsSpoiler, imageUrls</text><text x="12" y="119" font-size="13">createdAt, updatedAt</text></g>
+        <g transform="translate(645,40)"><rect width="220" height="150" rx="7" fill="#e9f5eb" stroke="#4c9455" stroke-width="2"/><rect width="220" height="32" rx="7" fill="#4c9455"/><text x="110" y="22" text-anchor="middle" fill="white" font-weight="bold">MOVIES</text><text x="12" y="53" font-size="13">PK id (TMDB identifier)</text><text x="12" y="75" font-size="13">title, year, genre</text><text x="12" y="97" font-size="13">overview, posterPath</text><text x="12" y="119" font-size="13">tmdbRating</text><text x="12" y="141" font-size="13">cached provider data</text></g>
+        <g transform="translate(35,275)"><rect width="220" height="118" rx="7" fill="#fff4d8" stroke="#b89028" stroke-width="2"/><rect width="220" height="32" rx="7" fill="#b89028"/><text x="110" y="22" text-anchor="middle" fill="white" font-weight="bold">SESSIONS</text><text x="12" y="53" font-size="13">PK id, FK userId</text><text x="12" y="75" font-size="13">accessHash, refreshHash</text><text x="12" y="97" font-size="13">expiry timestamps</text></g>
+        <g transform="translate(340,245)"><rect width="220" height="105" rx="7" fill="#f4f6f8" stroke="#6d7480" stroke-width="2"/><rect width="220" height="32" rx="7" fill="#6d7480"/><text x="110" y="22" text-anchor="middle" fill="white" font-weight="bold">LIKES</text><text x="12" y="57" font-size="13">PK id, FK userId</text><text x="12" y="80" font-size="13">FK reviewId, createdAt</text></g>
+        <g transform="translate(645,245)"><rect width="220" height="125" rx="7" fill="#f4f6f8" stroke="#6d7480" stroke-width="2"/><rect width="220" height="32" rx="7" fill="#6d7480"/><text x="110" y="22" text-anchor="middle" fill="white" font-weight="bold">COMMENTS</text><text x="12" y="53" font-size="13">PK id, FK userId</text><text x="12" y="75" font-size="13">FK reviewId, text</text><text x="12" y="97" font-size="13">parentCommentId, timestamps</text></g>
+        <g transform="translate(35,480)"><rect width="220" height="105" rx="7" fill="#f4f6f8" stroke="#6d7480" stroke-width="2"/><rect width="220" height="32" rx="7" fill="#6d7480"/><text x="110" y="22" text-anchor="middle" fill="white" font-weight="bold">FOLLOWS</text><text x="12" y="57" font-size="13">PK id, FK followerId</text><text x="12" y="80" font-size="13">FK followingId, createdAt</text></g>
+        <g transform="translate(340,465)"><rect width="220" height="105" rx="7" fill="#f4f6f8" stroke="#6d7480" stroke-width="2"/><rect width="220" height="32" rx="7" fill="#6d7480"/><text x="110" y="22" text-anchor="middle" fill="white" font-weight="bold">WATCHLIST</text><text x="12" y="57" font-size="13">PK id, FK userId</text><text x="12" y="80" font-size="13">FK movieId, createdAt</text></g>
+        <g transform="translate(645,465)"><rect width="220" height="105" rx="7" fill="#f4f6f8" stroke="#6d7480" stroke-width="2"/><rect width="220" height="32" rx="7" fill="#6d7480"/><text x="110" y="22" text-anchor="middle" fill="white" font-weight="bold">MESSAGES</text><text x="12" y="57" font-size="13">PK id, FK userId</text><text x="12" y="80" font-size="13">text, createdAt</text></g>
+      </g>
+      <g stroke="#777" stroke-width="2" fill="none" marker-end="url(#er)"><line x1="255" y1="105" x2="337" y2="105"/><line x1="560" y1="105" x2="642" y2="105"/><line x1="145" y1="195" x2="145" y2="272"/><line x1="450" y1="175" x2="450" y2="242"/><line x1="560" y1="297" x2="642" y2="297"/><path d="M145 195 V445 H450 V462"/><path d="M145 195 V430 H755 V462"/><line x1="145" y1="393" x2="145" y2="477"/><line x1="755" y1="190" x2="755" y2="242"/></g>
+      <text x="292" y="93" font-family="Arial" font-size="12">1 : many</text><text x="597" y="93" font-family="Arial" font-size="12">many : 1</text>
+    </svg>
+    <div class="caption">Figure 4.4: Logical entity relationships in the JSON data store.</div>
+  </div>
+
+  <h2>4.5 UI Design</h2>
+  <p>The interface follows a mobile-first Material style with a crimson brand color, rounded cards, readable typography, light/dark themes, and a five-destination bottom navigation bar. The following wireframes represent the implemented information architecture.</p>
+  <div class="screen-grid">
+    <div class="phone"><h4>HOME</h4><div class="bar">SCENORA &nbsp; 🔍 &nbsp; ✉</div><div class="card"><b>For you</b> &nbsp; Following</div><div class="card"><span class="poster"></span><b>Movie review</b><br>★★★★★<br>User opinion and interaction controls.</div><div class="card">♡ Like &nbsp; ◯ Comment &nbsp; Share</div></div>
+    <div class="phone"><h4>EXPLORE</h4><div class="bar">Explore</div><div class="card">🔍 Search movies, series…</div><div class="card"><span class="poster"></span><b>Trending title</b><br>Year • Genre<br>TMDB rating</div><div class="card"><span class="poster"></span><b>Search result</b><br>Overview and actions</div></div>
+    <div class="phone"><h4>SHOUTBOX</h4><div class="bar">Shoutbox • Live</div><div class="card">Member A<br><b>What are you watching?</b></div><div class="card" style="background:#f4e8eb">Member B<br><b>Dune: Part Two</b></div><div class="card" style="margin-top:80px">Say something… &nbsp; ➤</div></div>
+    <div class="phone"><h4>ACTIVITY</h4><div class="bar">Activity</div><div class="card">♥ Rony liked your review<br><span class="small">Dune: Part Two • now</span></div><div class="card">● Emon commented<br><span class="small">“I agree with this review.”</span></div><div class="card">＋ Mainul followed you</div></div>
+    <div class="phone"><h4>PROFILE</h4><div class="bar">Profile &nbsp; ⚙</div><div class="center" style="font:30pt Arial">◉</div><div class="center"><b>Display Name</b><br><span class="small">@username • Dhaka</span></div><div class="card">Reviews &nbsp; Followers &nbsp; Following</div><div class="card">Watchlist • Theme • Backend Server</div></div>
+  </div>
+  <div class="caption">Figure 4.5: Representative wireframes of the five primary destinations.</div>
+</section>
+
+<section class="chapter">
+  <h1>5. Implementation / Development</h1>
+  <h2>5.1 Tools &amp; Technologies</h2>
+  <p>The Android frontend is implemented with Flutter and Dart. Flutter provides a single reactive widget tree, Material components, asynchronous networking, and Android release packaging. The backend is a separate Dart package using Shelf, Shelf Router, and the crypto library. This choice lets both client and server share a language while remaining independently deployable.</p>
+  <p>The local backend listens on all IPv4 interfaces at port 8080. Configuration is read from process variables or <code>server/.env</code>; process variables take precedence. The variables include the port, TMDB API credentials, and a token pepper. Data is stored at <code>server/data/db.json</code>. Cloudflared optionally maps <code>http://127.0.0.1:8080</code> to a temporary HTTPS URL.</p>
+  <p>
+    <span class="tag">Flutter 3 / Dart 3</span><span class="tag">Material Design</span><span class="tag">Shelf</span><span class="tag">Shelf Router</span><span class="tag">JSON REST API</span><span class="tag">TMDB</span><span class="tag">Secure Storage</span><span class="tag">Cloudflare Tunnel</span>
+  </p>
+
+  <h2>5.2 Module Description</h2>
+  <table class="grid">
+    <tr><th>Module</th><th>Main Files / Responsibility</th></tr>
+    <tr><td>Application shell</td><td><code>main.dart</code>, <code>main_shell.dart</code>: theme initialization, destination navigation, global state, background synchronization, and screen coordination.</td></tr>
+    <tr><td>Authentication</td><td><code>login_screen.dart</code>, API client, and backend auth routes: registration, login, refresh, logout, conditional access, and restored identity.</td></tr>
+    <tr><td>Movie discovery</td><td><code>explore_screen.dart</code>, <code>movie_detail_screen.dart</code>, and movie routes: debounced search, popular titles, details, images, and watchlist actions.</td></tr>
+    <tr><td>Reviews</td><td><code>review_composer.dart</code>, <code>home_screen.dart</code>, and review routes: validation, creation, feed, ratings, spoiler state, likes, and comments.</td></tr>
+    <tr><td>Community</td><td><code>shoutbox_screen.dart</code> and message routes: shared messages, authenticated sending, and four-second polling.</td></tr>
+    <tr><td>Activity</td><td><code>notifications_screen.dart</code> and activity route: incoming likes, comments, and follow events ordered by creation time.</td></tr>
+    <tr><td>Profile</td><td><code>profile_screen.dart</code> and user routes: public/private profile fields, counts, editing, theme, logout, watchlist, and backend URL settings.</td></tr>
+    <tr><td>Security</td><td><code>security.dart</code>: random salts/tokens, iterative HMAC-SHA-256 password derivation, constant-time comparison, and peppered token hashes.</td></tr>
+    <tr><td>Persistence</td><td><code>store.dart</code>: schema initialization/migration, ID generation, typed tables, and atomic JSON save.</td></tr>
+  </table>
+
+  <h2>5.3 Key Code Snippets</h2>
+  <h3>5.3.1 Protected Review Creation</h3>
+  <div class="code">Future&lt;void&gt; _openComposer([Movie? selected]) async {
+  if (!await _ensureAuthenticated(
+      'Log in to publish reviews and join the SCENORA community.')) {
+    return;
+  }
+  final review = await showModalBottomSheet&lt;Review&gt;(
+    context: context,
+    isScrollControlled: true,
+    builder: (_) =&gt; ReviewComposer(initialMovie: selected),
+  );
+  if (review != null) {
+    final saved = await _api.createReview(
+      movie: review.movie,
+      rating: review.rating,
+      text: review.text,
+      containsSpoiler: review.spoiler,
+    );
+    setState(() =&gt; _reviews.insert(0, saved));
+  }
+}</div>
+  <p class="small">The UI checks authentication before opening the composer, then sends validated review data through the centralized API client.</p>
+
+  <h3>5.3.2 Password Protection</h3>
+  <div class="code">PasswordHash hashPassword(String password, {String? salt}) {
+  final saltValue = salt ?? randomToken(16);
+  final hmac = Hmac(sha256, utf8.encode(password));
+  var block = hmac.convert([...utf8.encode(saltValue), 0, 0, 0, 1]).bytes;
+  final derived = List&lt;int&gt;.from(block);
+  for (var i = 1; i &lt; 30000; i++) {
+    block = hmac.convert(block).bytes;
+    for (var byte = 0; byte &lt; derived.length; byte++) {
+      derived[byte] ^= block[byte];
+    }
+  }
+  return PasswordHash(salt: saltValue, hash: base64UrlEncode(derived));
+}</div>
+  <p class="small">The server stores a derived password value and random salt, never the original password. Token hashes are also stored instead of raw bearer tokens.</p>
+
+  <h3>5.3.3 Atomic Persistence</h3>
+  <div class="code">void save() {
+  final temporary = File('$path.tmp');
+  temporary.writeAsStringSync(
+    const JsonEncoder.withIndent('  ').convert(data),
+    flush: true,
+  );
+  if (_file.existsSync()) _file.deleteSync();
+  temporary.renameSync(path);
+}</div>
+  <p class="small">Writing to a temporary file before renaming reduces the risk of leaving a partially written database after interruption.</p>
+
+  <h3>5.3.4 Temporary Demonstration Tunnel</h3>
+  <div class="code"># Run from the project root
+.\start_demo_tunnel.bat
+
+# The script starts/checks the backend and prints:
+# https://&lt;generated-name&gt;.trycloudflare.com</div>
+  <p>The generated URL is entered in <em>Profile → Settings → Backend server → Test &amp; Save</em>. It is intentionally not hard-coded because every Quick Tunnel session receives a different address.</p>
+
+  <h2>5.4 Screenshots</h2>
+  <p>The following captures were taken from the installed SCENORA Android application. They demonstrate authenticated access, server-backed reviews, TMDB search and movie details, and a multi-account community Shoutbox. Android status and gesture bars were visually cropped in the detailed figures to keep attention on the application interface.</p>
+  <img class="screenshot-overview" src="report_assets/scenora_screens_overview.png" alt="Edited overview of five SCENORA application screens">
+  <div class="caption">Figure 5.1: Edited overview of the implemented SCENORA Android screens.</div>
+
+  <div class="screenshot-spread page-break">
+    <div class="screenshot-card">
+      <div class="screen-window"><img src="report_assets/scenora_login.jpeg" alt="SCENORA login screen"></div>
+      <div class="caption">Figure 5.2: Login screen connected to the SCENORA backend.</div>
+    </div>
+    <div class="screenshot-card">
+      <div class="screen-window"><img src="report_assets/scenora_home_feed.jpeg" alt="SCENORA home review feed"></div>
+      <div class="caption">Figure 5.3: Home feed showing server-backed user reviews.</div>
+    </div>
+  </div>
+
+  <div class="screenshot-spread page-break">
+    <div class="screenshot-card">
+      <div class="screen-window"><img src="report_assets/scenora_explore.jpeg" alt="SCENORA Explore search results"></div>
+      <div class="caption">Figure 5.4: Explore search showing TMDB movie posters and ratings.</div>
+    </div>
+    <div class="screenshot-card">
+      <div class="screen-window"><img src="report_assets/scenora_movie_details.jpeg" alt="SCENORA Dune movie detail screen"></div>
+      <div class="caption">Figure 5.5: Movie details, storyline, ratings, watchlist, and review action.</div>
+    </div>
+  </div>
+
+  <div class="screenshot-spread page-break">
+    <div class="screenshot-card single">
+      <div class="screen-window"><img src="report_assets/scenora_shoutbox.jpeg" alt="SCENORA multi-account Shoutbox"></div>
+      <div class="caption">Figure 5.6: Shared Shoutbox containing messages from multiple accounts.</div>
+    </div>
+  </div>
+</section>
+
+<section class="chapter">
+  <h1>6. Testing</h1>
+  <h2>6.1 Testing Strategy</h2>
+  <p>Testing combined automated backend integration tests, Flutter widget tests, manual Android tests, and network-path tests. The backend test launches a real local HTTP server with a temporary JSON database and sends requests through the same routes used by the mobile client. This approach verifies serialization, authentication, business rules, persistence interactions, and status codes together.</p>
+  <p>Flutter widget tests verify that the navigation shell appears, Explore opens, and a guest is redirected to authentication before publishing a review. Manual testing on an Android phone verifies installation, touch interaction, poster display, profile identity, cross-account activity, and Cloudflare connectivity.</p>
+
+  <table class="grid">
+    <tr><th>Test ID</th><th>Scenario</th><th>Expected Result</th><th>Result</th></tr>
+    <tr><td>TC-01</td><td>GET <code>/health</code></td><td>HTTP 200 and service status <code>ok</code>.</td><td>Pass</td></tr>
+    <tr><td>TC-02</td><td>Register two unique users</td><td>Accounts and access/refresh tokens are returned.</td><td>Pass</td></tr>
+    <tr><td>TC-03</td><td>Login and refresh session</td><td>Valid credentials work; refresh rotates the session.</td><td>Pass</td></tr>
+    <tr><td>TC-04</td><td>Edit authenticated profile</td><td>Bio/location persist and appear in the current profile.</td><td>Pass</td></tr>
+    <tr><td>TC-05</td><td>Search “Dune”</td><td>TMDB or cached movie results are returned.</td><td>Pass</td></tr>
+    <tr><td>TC-06</td><td>Toggle watchlist item</td><td>The movie appears in the authenticated user's watchlist.</td><td>Pass</td></tr>
+    <tr><td>TC-07</td><td>Publish a review</td><td>Review is stored and appears in the feed.</td><td>Pass</td></tr>
+    <tr><td>TC-08</td><td>Like without login</td><td>Server rejects the request with HTTP 401.</td><td>Pass</td></tr>
+    <tr><td>TC-09</td><td>Second user likes/comments</td><td>Counts update and the first user's Activity receives both events.</td><td>Pass</td></tr>
+    <tr><td>TC-10</td><td>Follow another user</td><td>Follow state/count changes and Activity receives a follow event.</td><td>Pass</td></tr>
+    <tr><td>TC-11</td><td>Send and list Shoutbox messages</td><td>Message persists and is visible to subsequent clients.</td><td>Pass</td></tr>
+    <tr><td>TC-12</td><td>Open protected review composer as guest</td><td>Login screen opens with a clear reason.</td><td>Pass</td></tr>
+    <tr><td>TC-13</td><td>Save Cloudflare URL in app</td><td>Health check passes and the phone communicates across networks.</td><td>Pass</td></tr>
+    <tr><td>TC-14</td><td>Install release APK on Samsung S23 Ultra</td><td>Application installs, launches, and reaches the backend.</td><td>Pass</td></tr>
+  </table>
+
+  <h2>6.2 Bugs Found &amp; Fixes</h2>
+  <table class="grid">
+    <tr><th>Problem</th><th>Cause</th><th>Resolution</th></tr>
+    <tr><td>Android phone was not detected.</td><td>No connected ADB device or configured emulator.</td><td>Built a release APK and transferred it directly to the physical phone for installation.</td></tr>
+    <tr><td>Initial APK was reported incompatible.</td><td>Incorrect/old output selection or build compatibility issue.</td><td>Generated and used the universal release APK from <code>build/app/outputs/flutter-apk/app-release.apk</code>.</td></tr>
+    <tr><td>New login still displayed a default profile.</td><td>Profile interface used seeded/mock identity instead of authenticated API data.</td><td>Bound profile rendering to the current backend user and removed default activity data.</td></tr>
+    <tr><td>New comments/reviews were not visible.</td><td>Client state was not refreshed from persistent backend data.</td><td>Connected create/list endpoints and refreshed feed, comments, profile, and counters after writes.</td></tr>
+    <tr><td>Movie posters did not display.</td><td>Poster path was not consistently converted into a full TMDB image URL.</td><td>Normalized poster data in the API client/widget and used cached movie metadata.</td></tr>
+    <tr><td>Backend stopped working after changing Wi-Fi/hotspot.</td><td>The laptop's local IP address changed.</td><td>Added editable backend settings and a Cloudflare Quick Tunnel launcher.</td></tr>
+    <tr><td>Tunnel script stopped on normal Cloudflared logs.</td><td>Windows PowerShell interpreted native stderr status messages as errors.</td><td>Handled native output safely, detected the generated URL, displayed it clearly, and copied it to the clipboard.</td></tr>
+    <tr><td>Home search/message icons did nothing.</td><td>The icon callbacks were empty placeholders.</td><td>Connected Search to Explore and Messages to the Shoutbox destination.</td></tr>
+  </table>
+</section>
+
+<section class="chapter">
+  <h1>7. Results and Discussion</h1>
+  <h2>7.1 Final Working Output</h2>
+  <p>The project produced a functioning Flutter Android application and a self-contained Dart backend. A fresh user can register, obtain an account-specific profile, search for a real movie, publish a review, and retain the result after refresh or restart. A second account can interact with that review through likes and comments; these actions appear as Activity items for the review owner. Both accounts can participate in the persistent Shoutbox. The backend URL can be changed from the app and validated before saving, making the same APK usable across different demonstration networks.</p>
+
+  <h2>7.2 Performance Observations</h2>
+  <ul>
+    <li>Navigation and locally rendered interface transitions are immediate on a modern Android device.</li>
+    <li>Search response time depends primarily on TMDB and network latency; a 450 ms debounce prevents unnecessary requests while typing.</li>
+    <li>The five-second feed/activity synchronization and four-second Shoutbox polling are adequate for a classroom MVP, but they generate repeated requests and are less immediate than WebSockets.</li>
+    <li>JSON persistence performs well for a small demonstration data set but is not designed for concurrent high-volume production traffic.</li>
+    <li>Cloudflare adds a small network hop but removes local-IP and same-network restrictions.</li>
+  </ul>
+
+  <h2>7.3 What Went Well</h2>
+  <ul>
+    <li>A clear client–server boundary kept secrets and business rules out of the mobile interface.</li>
+    <li>One Dart language across Flutter and backend reduced context switching for the team.</li>
+    <li>Runtime backend configuration avoided rebuilding the APK when the network changed.</li>
+    <li>Multi-account testing demonstrated that reviews, interactions, Activity, and messages are truly server-backed rather than static UI data.</li>
+    <li>Automated integration tests cover the main lifecycle from registration through social interaction.</li>
+  </ul>
+
+  <h2>7.4 Challenges and Trade-offs</h2>
+  <p>The greatest practical challenge was connecting a physical Android phone to a laptop-hosted server under changing network conditions. A temporary tunnel was selected because it is fast to demonstrate and requires no permanent hosting account; however, it has no uptime guarantee and changes its address on restart. A JSON database was selected for simplicity and portability, but it does not provide transactions, indexing, or concurrency at production scale. Polling simplified Shoutbox implementation but trades efficiency for ease of deployment.</p>
+
+  <h2>7.5 User Feedback</h2>
+  <p>Formal user-study data was not collected, so the report does not claim quantitative satisfaction results. Informal team testing indicated that the five-tab navigation, visible authentication prompts, and movie-first review flow were easy to understand. Future evaluation should use a structured questionnaire with task completion time, error counts, and a standard usability scale.</p>
+</section>
+
+<section class="chapter">
+  <h1>8. Conclusion and Future Work</h1>
+  <h2>8.1 Conclusion</h2>
+  <p>SCENORA achieved the central objectives of Software Development Project II by delivering a working Android client, custom REST backend, external movie integration, persistent multi-user data, authentication, and social interaction. The system supports a complete demonstration: server startup, secure account creation, movie search, review publication, cross-account likes and comments, Activity updates, watchlist use, and community messaging.</p>
+  <p>The project also demonstrates engineering decisions beyond visual interface design. Secrets remain on the backend, password and session values receive protection, JSON saves are atomic, API behavior is tested through a real HTTP server, and the installed APK can adapt to a new server address. The result is a credible academic MVP with a clear path to production improvement.</p>
+
+  <h2>8.2 Future Enhancements</h2>
+  <ol>
+    <li><strong>Production database:</strong> migrate JSON data to PostgreSQL, Firestore, or another managed transactional database with indexes and backups.</li>
+    <li><strong>Stable deployment:</strong> deploy the backend to a managed cloud service with a fixed HTTPS domain instead of a temporary Quick Tunnel.</li>
+    <li><strong>Real-time communication:</strong> replace chat polling with WebSockets and add typing/online indicators.</li>
+    <li><strong>Push notifications:</strong> integrate Firebase Cloud Messaging for background likes, comments, follows, and chat alerts.</li>
+    <li><strong>Account recovery:</strong> add verified email, password-reset flow, and optional Google/Apple sign-in.</li>
+    <li><strong>Media storage:</strong> add secure object storage for avatars, cover images, and review attachments.</li>
+    <li><strong>Moderation:</strong> implement report/block controls, an administrator dashboard, content policy, audit logs, and rate limiting.</li>
+    <li><strong>Social expansion:</strong> add private messages, richer public profiles, following-only feed filtering, lists, and recommendations.</li>
+    <li><strong>Quality:</strong> expand widget/integration tests, accessibility checks, continuous integration, monitoring, and crash reporting.</li>
+    <li><strong>Release readiness:</strong> configure a protected signing key, privacy policy, optimized assets, versioned deployment, and Play Store listing.</li>
+  </ol>
+</section>
+
+<section class="chapter refs">
+  <h1>References</h1>
+  <ol>
+    <li>Flutter Team, “Flutter Documentation,” <a href="https://docs.flutter.dev/">https://docs.flutter.dev/</a>, accessed November 2026.</li>
+    <li>Dart Team, “Dart Documentation,” <a href="https://dart.dev/guides">https://dart.dev/guides</a>, accessed November 2026.</li>
+    <li>Google, “Material Design,” <a href="https://m3.material.io/">https://m3.material.io/</a>, accessed November 2026.</li>
+    <li>Dart Packages, “shelf,” <a href="https://pub.dev/packages/shelf">https://pub.dev/packages/shelf</a>, accessed November 2026.</li>
+    <li>Dart Packages, “shelf_router,” <a href="https://pub.dev/packages/shelf_router">https://pub.dev/packages/shelf_router</a>, accessed November 2026.</li>
+    <li>The Movie Database, “TMDB API Documentation,” <a href="https://developer.themoviedb.org/docs/getting-started">https://developer.themoviedb.org/docs/getting-started</a>, accessed November 2026.</li>
+    <li>Cloudflare, “Cloudflare Tunnel Documentation,” <a href="https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/">https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/</a>, accessed November 2026.</li>
+    <li>OWASP Foundation, “Password Storage Cheat Sheet,” <a href="https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html">https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html</a>, accessed November 2026.</li>
+    <li>IMDb, “Ratings, Reviews, and Where to Watch the Best Movies &amp; TV Shows,” <a href="https://www.imdb.com/">https://www.imdb.com/</a>, accessed November 2026.</li>
+    <li>Letterboxd, “Social Film Discovery,” <a href="https://letterboxd.com/">https://letterboxd.com/</a>, accessed November 2026.</li>
+  </ol>
+</section>
+
+<section class="chapter">
+  <h1>Appendix A — Main REST Endpoints</h1>
+  <table class="grid">
+    <tr><th>Area</th><th>Method and Route</th><th>Purpose</th></tr>
+    <tr><td>System</td><td>GET <code>/health</code></td><td>Connectivity and service health check.</td></tr>
+    <tr><td>Authentication</td><td>POST <code>/auth/register</code>, <code>/auth/login</code>, <code>/auth/refresh</code>, <code>/auth/logout</code></td><td>Create and manage sessions.</td></tr>
+    <tr><td>Users</td><td>GET/PATCH <code>/users/me</code>; GET <code>/users/&lt;id&gt;</code></td><td>Private and public profiles.</td></tr>
+    <tr><td>Follows</td><td>POST <code>/users/&lt;id&gt;/follow</code>; GET followers/following</td><td>Toggle and list social relationships.</td></tr>
+    <tr><td>Movies</td><td>GET <code>/movies/search</code>, <code>/movies/popular</code>, <code>/movies/&lt;id&gt;</code></td><td>TMDB discovery and detail data.</td></tr>
+    <tr><td>Watchlist</td><td>GET <code>/watchlist</code>; POST <code>/watchlist/&lt;movieId&gt;</code></td><td>List and toggle saved movies.</td></tr>
+    <tr><td>Reviews</td><td>GET/POST <code>/reviews</code>; GET/PATCH/DELETE <code>/reviews/&lt;id&gt;</code></td><td>Review lifecycle.</td></tr>
+    <tr><td>Likes</td><td>POST <code>/reviews/&lt;id&gt;/like</code></td><td>Authenticated like/unlike toggle.</td></tr>
+    <tr><td>Comments</td><td>GET/POST review comments; PATCH/DELETE comment</td><td>Comment lifecycle.</td></tr>
+    <tr><td>Activity</td><td>GET <code>/activity</code></td><td>Incoming like, comment, and follow events.</td></tr>
+    <tr><td>Shoutbox</td><td>GET/POST <code>/messages</code></td><td>Read and send shared community messages.</td></tr>
+  </table>
+
+  <h2>Appendix B — Demonstration Checklist</h2>
+  <ol>
+    <li>Open a terminal at <code>D:\Flutter\Scenora</code>.</li>
+    <li>Run <code>.\start_demo_tunnel.bat</code> and keep the terminal open.</li>
+    <li>Copy the generated <code>https://…trycloudflare.com</code> URL.</li>
+    <li>In the app, open Profile → Settings → Backend server → Test &amp; Save.</li>
+    <li>Create Account A, search a movie, publish a review, and send a Shoutbox message.</li>
+    <li>Log out; create Account B; like/comment on Account A’s review and send another message.</li>
+    <li>Log back into Account A and show the Activity entries.</li>
+    <li>Never close the server/tunnel terminal during the demonstration.</li>
+  </ol>
+
+  <div class="note"><strong>Demonstration reminder:</strong> keep the backend and Cloudflare tunnel terminal running, and never display the <code>.env</code> file, TMDB credentials, access tokens, passwords, or other secrets.</div>
+</section>
+
+</body>
+</html>

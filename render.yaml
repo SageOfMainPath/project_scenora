@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: scenora-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: SUPABASE_DATABASE_URL
+        sync: false
+      - key: TMDB_API_KEY
+        sync: false
+      - key: TMDB_READ_ACCESS_TOKEN
+        sync: false
+      - key: SCENORA_TOKEN_PEPPER
+        sync: false

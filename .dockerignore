@@ -1,0 +1,14 @@
+.git
+.github
+.dart_tool
+**/.dart_tool
+build
+coverage
+android
+docs
+test
+*.iml
+*.log
+server/.env
+server/data
+server/test
