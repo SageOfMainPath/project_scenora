@@ -76,6 +76,7 @@ dart test
 
 ## Documentation
 
+- [Privacy policy](PRIVACY_POLICY.md)
 - [Final project report (PDF)](docs/group_1.pdf)
 - [Final project report (HTML)](docs/SCENORA_Final_Project_Report.html)
 - [Backend implementation: tasks 1–8](docs/BACKEND_1_TO_8.md)
