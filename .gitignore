@@ -36,6 +36,7 @@ server/.env
 .pub-cache/
 .pub/
 /build/
+/release/
 /coverage/
 **/.kotlin/
 **/hs_err_pid*.log

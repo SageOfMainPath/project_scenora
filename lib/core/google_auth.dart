@@ -10,18 +10,38 @@ const supabasePublishableKey = String.fromEnvironment(
 bool get isGoogleAuthConfigured =>
     supabaseUrl.isNotEmpty && supabasePublishableKey.isNotEmpty;
 
+bool _isGoogleAuthReady = false;
+Object? _googleAuthInitializationError;
+
 Future<void> initializeGoogleAuth() async {
   if (!isGoogleAuthConfigured) return;
-  await Supabase.initialize(
-    url: supabaseUrl,
-    publishableKey: supabasePublishableKey,
-  );
+  try {
+    await Supabase.initialize(
+      url: supabaseUrl,
+      publishableKey: supabasePublishableKey,
+    );
+    _isGoogleAuthReady = true;
+    _googleAuthInitializationError = null;
+  } on Object catch (error) {
+    _isGoogleAuthReady = false;
+    _googleAuthInitializationError = error;
+    rethrow;
+  }
 }
 
 Future<String> signInWithGoogle() async {
   if (!isGoogleAuthConfigured) {
     throw const GoogleAuthException(
       'Google Sign-In needs the Supabase URL and publishable key.',
+    );
+  }
+  if (!_isGoogleAuthReady) {
+    final detail = _googleAuthInitializationError == null
+        ? ''
+        : ' (${_googleAuthInitializationError.runtimeType})';
+    throw GoogleAuthException(
+      'Google Sign-In could not initialize$detail. Restart the app and try '
+      'again.',
     );
   }
   final auth = Supabase.instance.client.auth;
