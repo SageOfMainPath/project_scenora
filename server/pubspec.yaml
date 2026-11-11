@@ -1,6 +1,6 @@
 name: scenora_backend
 description: REST backend for the SCENORA Flutter application.
-version: 1.0.0
+version: 1.4.0
 publish_to: none
 
 environment:

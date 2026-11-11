@@ -82,7 +82,7 @@ class ScenoraApi {
   Response _health(Request request) => _ok({
     'status': 'ok',
     'service': 'scenora-backend',
-    'version': '1.0.0',
+    'version': '1.4.0',
     'time': DateTime.now().toUtc().toIso8601String(),
   });
 
