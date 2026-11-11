@@ -256,11 +256,27 @@ void main() {
         containsAll(['like', 'comment', 'follow']),
       );
 
-      final followers = await request('GET', '/users/$aliceId/followers');
+      final followers = await request(
+        'GET',
+        '/users/$aliceId/followers',
+        token: aliceToken,
+      );
       expect(followers.status, 200);
       final followerItems = followers.body['items'] as List<dynamic>;
       expect(followerItems.length, 1);
       expect((followerItems.first as Map<String, dynamic>)['id'], bobId);
+
+      final following = await request(
+        'GET',
+        '/users/$bobId/following',
+        token: bobToken,
+      );
+      expect(following.status, 200);
+      final followingUser =
+          (following.body['items'] as List<dynamic>).single
+              as Map<String, dynamic>;
+      expect(followingUser['id'], aliceId);
+      expect(followingUser['isFollowing'], true);
 
       final publicProfile = await request('GET', '/users/$aliceId');
       expect(publicProfile.status, 200);

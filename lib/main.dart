@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'core/google_auth.dart';
@@ -6,16 +8,10 @@ import 'screens/main_shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  try {
-    await initializeGoogleAuth();
-  } on Object catch (error, stackTrace) {
-    // Authentication is optional at startup. A platform-specific Supabase
-    // initialization failure must not prevent the rest of SCENORA from
-    // opening; the login flow will surface a useful message instead.
-    debugPrint('Google Auth initialization failed: $error');
-    debugPrintStack(stackTrace: stackTrace);
-  }
   runApp(const ScenoraApp());
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(initializeGoogleAuth());
+  });
 }
 
 class ScenoraApp extends StatefulWidget {

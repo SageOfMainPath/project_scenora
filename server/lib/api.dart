@@ -330,23 +330,39 @@ class ScenoraApi {
 
   Response _followers(Request request, String id) {
     if (_userById(id) == null) return _error(404, 'User not found.');
+    final viewer = _authenticatedUser(request);
     final ids = store
         .table('follows')
         .where((f) => f['followingId'] == id)
         .map((f) => f['followerId']);
     return _ok({
-      'items': ids.map((id) => _publicUser(_userById('$id')!)).toList(),
+      'items': ids
+          .map(
+            (id) => _publicUser(
+              _userById('$id')!,
+              viewerId: viewer == null ? null : '${viewer['id']}',
+            ),
+          )
+          .toList(),
     });
   }
 
   Response _following(Request request, String id) {
     if (_userById(id) == null) return _error(404, 'User not found.');
+    final viewer = _authenticatedUser(request);
     final ids = store
         .table('follows')
         .where((f) => f['followerId'] == id)
         .map((f) => f['followingId']);
     return _ok({
-      'items': ids.map((id) => _publicUser(_userById('$id')!)).toList(),
+      'items': ids
+          .map(
+            (id) => _publicUser(
+              _userById('$id')!,
+              viewerId: viewer == null ? null : '${viewer['id']}',
+            ),
+          )
+          .toList(),
     });
   }
 

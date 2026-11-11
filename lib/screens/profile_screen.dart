@@ -18,6 +18,8 @@ class ProfileScreen extends StatelessWidget {
     required this.serverUrl,
     required this.onServerUrlChanged,
     required this.onUpdateProfile,
+    required this.onFollowersTap,
+    required this.onFollowingTap,
   });
 
   final Set<Movie> watchlist;
@@ -37,6 +39,8 @@ class ProfileScreen extends StatelessWidget {
     String location,
   )
   onUpdateProfile;
+  final VoidCallback onFollowersTap;
+  final VoidCallback onFollowingTap;
 
   @override
   Widget build(BuildContext context) {
@@ -108,10 +112,12 @@ class ProfileScreen extends StatelessWidget {
                     _Stat(
                       value: '${user?['followerCount'] ?? 0}',
                       label: 'Followers',
+                      onTap: isLoggedIn ? onFollowersTap : null,
                     ),
                     _Stat(
                       value: '${user?['followingCount'] ?? 0}',
                       label: 'Following',
+                      onTap: isLoggedIn ? onFollowingTap : null,
                     ),
                   ],
                 ),
@@ -464,24 +470,42 @@ class ProfileScreen extends StatelessWidget {
 }
 
 class _Stat extends StatelessWidget {
-  const _Stat({required this.value, required this.label});
+  const _Stat({required this.value, required this.label, this.onTap});
   final String value;
   final String label;
+  final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      Text(
-        value,
-        style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
+  Widget build(BuildContext context) => InkWell(
+    key: ValueKey('profile-stat-${label.toLowerCase()}'),
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(14),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              if (onTap != null) ...[
+                const SizedBox(width: 2),
+                const Icon(Icons.chevron_right_rounded, size: 15),
+              ],
+            ],
+          ),
+        ],
       ),
-      Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-      ),
-    ],
+    ),
   );
 }

@@ -12,6 +12,7 @@ import 'notifications_screen.dart';
 import 'profile_screen.dart';
 import 'review_composer.dart';
 import 'shoutbox_screen.dart';
+import 'user_connections_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({
@@ -360,6 +361,45 @@ class _MainShellState extends State<MainShell> {
     }
   }
 
+  Future<bool?> _toggleFollowUser(String userId) async {
+    try {
+      final following = await _api.toggleFollow(userId);
+      if (mounted) {
+        setState(() {
+          for (final item in _reviews) {
+            if (item.userId == userId) item.isFollowing = following;
+          }
+        });
+      }
+      return following;
+    } on ApiException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+      }
+      return null;
+    }
+  }
+
+  Future<void> _openConnections({required bool followers}) async {
+    final userId = '${_api.currentUser?['id'] ?? ''}';
+    if (userId.isEmpty) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => UserConnectionsScreen(
+          title: followers ? 'Followers' : 'Following',
+          currentUserId: userId,
+          loadUsers: () => followers
+              ? _api.followers(userId)
+              : _api.following(userId),
+          onToggleFollow: _toggleFollowUser,
+        ),
+      ),
+    );
+    if (mounted) await _loadAccountData();
+  }
+
   Future<Review?> _editReview(
     Review review,
     int rating,
@@ -518,6 +558,8 @@ class _MainShellState extends State<MainShell> {
         serverUrl: _api.baseUrl,
         onServerUrlChanged: _updateServerUrl,
         onUpdateProfile: _updateProfile,
+        onFollowersTap: () => _openConnections(followers: true),
+        onFollowingTap: () => _openConnections(followers: false),
       ),
     ];
     return Scaffold(

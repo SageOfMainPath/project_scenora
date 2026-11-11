@@ -315,6 +315,25 @@ class ScenoraApiClient {
     return result['following'] == true;
   }
 
+  Future<List<Map<String, dynamic>>> followers(String userId) =>
+      _connections(userId, 'followers');
+
+  Future<List<Map<String, dynamic>>> following(String userId) =>
+      _connections(userId, 'following');
+
+  Future<List<Map<String, dynamic>>> _connections(
+    String userId,
+    String relationship,
+  ) async {
+    final result = await _request(
+      'GET',
+      '/users/${Uri.encodeComponent(userId)}/$relationship',
+      authenticated: isLoggedIn,
+    );
+    return (result['items'] as List<dynamic>? ?? const [])
+        .cast<Map<String, dynamic>>();
+  }
+
   Future<Review> updateReview({
     required String reviewId,
     required int rating,
