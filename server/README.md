@@ -49,7 +49,7 @@ Authorization: Bearer <accessToken>
 
 ## Main routes
 
-- `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`
+- `POST /auth/register`, `POST /auth/login`, `POST /auth/google`, `POST /auth/refresh`, `POST /auth/logout`
 - `GET/PATCH /users/me`, `GET /users/<id>`
 - `POST /users/<id>/follow`, `GET /users/<id>/followers`, `GET /users/<id>/following`
 - `GET /movies/search?q=...`, `GET /movies/popular`, `GET /movies/<id>`

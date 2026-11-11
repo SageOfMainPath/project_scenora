@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import 'core/google_auth.dart';
 import 'core/scenora_theme.dart';
 import 'screens/main_shell.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeGoogleAuth();
   runApp(const ScenoraApp());
 }
 

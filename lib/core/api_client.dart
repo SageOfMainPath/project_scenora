@@ -35,26 +35,29 @@ class ScenoraApiClient {
   String? accessToken;
   String? refreshToken;
   Map<String, dynamic>? currentUser;
+  Future<void>? _refreshFuture;
 
   bool get isLoggedIn => accessToken != null;
 
   Future<bool> initialize() async {
+    final preferences = await SharedPreferences.getInstance();
+    _baseUrl = preferences.getString(_serverUrlKey) ?? _baseUrl;
     try {
-      final preferences = await SharedPreferences.getInstance();
-      _baseUrl = preferences.getString(_serverUrlKey) ?? _baseUrl;
       accessToken = await _secureStorage.read(key: _accessTokenKey);
       refreshToken = await _secureStorage.read(key: _refreshTokenKey);
       if (refreshToken == null || refreshToken!.isEmpty) return false;
-      final result = await _request(
-        'POST',
-        '/auth/refresh',
-        body: {'refreshToken': refreshToken},
-      );
-      await _saveSession(result);
+      await _refreshSession();
       return true;
-    } catch (_) {
-      await _clearSession();
-      return false;
+    } on ApiException catch (error) {
+      if (error.statusCode == 401) {
+        await _clearSession();
+        return false;
+      }
+      // Keep a previously valid session during a temporary outage or while a
+      // free hosting instance is waking up. The next request will retry it.
+      return accessToken != null || refreshToken != null;
+    } on Object {
+      return accessToken != null || refreshToken != null;
     }
   }
 
@@ -107,6 +110,15 @@ class ScenoraApiClient {
       'POST',
       '/auth/login',
       body: {'email': email, 'password': password},
+    );
+    await _saveSession(result);
+  }
+
+  Future<void> loginWithGoogle(String supabaseAccessToken) async {
+    final result = await _request(
+      'POST',
+      '/auth/google',
+      body: {'accessToken': supabaseAccessToken},
     );
     await _saveSession(result);
   }
@@ -217,6 +229,28 @@ class ScenoraApiClient {
     final result = await _request(
       'GET',
       '/reviews?movieId=${Uri.encodeQueryComponent(movieId)}&limit=50',
+      authenticated: isLoggedIn,
+    );
+    return (result['items'] as List<dynamic>? ?? const [])
+        .map((item) => _review(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<Review>> reviewsForUser(String userId) async {
+    final result = await _request(
+      'GET',
+      '/reviews?userId=${Uri.encodeQueryComponent(userId)}&limit=100',
+      authenticated: isLoggedIn,
+    );
+    return (result['items'] as List<dynamic>? ?? const [])
+        .map((item) => _review(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<Review>> searchReviews(String query) async {
+    final result = await _request(
+      'GET',
+      '/reviews?q=${Uri.encodeQueryComponent(query)}&limit=100',
       authenticated: isLoggedIn,
     );
     return (result['items'] as List<dynamic>? ?? const [])
@@ -338,15 +372,45 @@ class ScenoraApiClient {
   }
 
   Future<void> _saveSession(Map<String, dynamic> result) async {
-    accessToken = result['accessToken'] as String?;
-    refreshToken = result['refreshToken'] as String?;
-    currentUser = result['user'] as Map<String, dynamic>?;
+    final nextAccessToken = result['accessToken'] as String?;
+    final nextRefreshToken = result['refreshToken'] as String?;
+    if (nextAccessToken != null && nextAccessToken.isNotEmpty) {
+      accessToken = nextAccessToken;
+    }
+    if (nextRefreshToken != null && nextRefreshToken.isNotEmpty) {
+      refreshToken = nextRefreshToken;
+    }
+    if (result['user'] case final Map<String, dynamic> user) {
+      currentUser = user;
+    }
     if (accessToken != null) {
       await _secureStorage.write(key: _accessTokenKey, value: accessToken);
     }
     if (refreshToken != null) {
       await _secureStorage.write(key: _refreshTokenKey, value: refreshToken);
     }
+  }
+
+  Future<void> _refreshSession() {
+    final pending = _refreshFuture;
+    if (pending != null) return pending;
+    final token = refreshToken;
+    if (token == null || token.isEmpty) {
+      return Future<void>.error(const ApiException('Please log in first.'));
+    }
+    final operation = () async {
+      final result = await _request(
+        'POST',
+        '/auth/refresh',
+        body: {'refreshToken': token},
+        retryAuthentication: false,
+      );
+      await _saveSession(result);
+    }();
+    _refreshFuture = operation;
+    return operation.whenComplete(() {
+      if (identical(_refreshFuture, operation)) _refreshFuture = null;
+    });
   }
 
   Future<void> _clearSession() async {
@@ -390,13 +454,7 @@ class ScenoraApiClient {
             authenticated &&
             retryAuthentication &&
             refreshToken != null) {
-          final refreshed = await _request(
-            'POST',
-            '/auth/refresh',
-            body: {'refreshToken': refreshToken},
-            retryAuthentication: false,
-          );
-          await _saveSession(refreshed);
+          await _refreshSession();
           return await _request(
             method,
             path,

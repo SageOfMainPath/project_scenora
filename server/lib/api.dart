@@ -13,18 +13,23 @@ class ScenoraApi {
     SecurityService? security,
     this.tmdbApiKey,
     this.tmdbReadAccessToken,
+    this.supabaseUrl,
+    this.supabasePublishableKey,
   }) : security = security ?? SecurityService();
 
   final ScenoraStore store;
   final SecurityService security;
   final String? tmdbApiKey;
   final String? tmdbReadAccessToken;
+  final String? supabaseUrl;
+  final String? supabasePublishableKey;
 
   Handler get handler {
     final router = Router()
       ..get('/health', _health)
       ..post('/auth/register', _register)
       ..post('/auth/login', _login)
+      ..post('/auth/google', _googleLogin)
       ..post('/auth/refresh', _refresh)
       ..post('/auth/logout', _logout)
       ..get('/users/me', _getMe)
@@ -149,6 +154,96 @@ class ScenoraApi {
     return _ok({'user': _publicUser(user), ...tokens});
   }
 
+  Future<Response> _googleLogin(Request request) async {
+    final body = await _body(request);
+    final accessToken = '${body['accessToken'] ?? ''}'.trim();
+    final projectUrl = supabaseUrl?.trim().replaceFirst(RegExp(r'/+$'), '');
+    final publishableKey = supabasePublishableKey?.trim();
+    if (projectUrl == null ||
+        projectUrl.isEmpty ||
+        publishableKey == null ||
+        publishableKey.isEmpty) {
+      return _error(503, 'Google Sign-In is not configured on the server.');
+    }
+    if (accessToken.isEmpty) {
+      return _error(400, 'A Google authentication token is required.');
+    }
+
+    Map<String, dynamic> identity;
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 20);
+    try {
+      final authRequest = await client.getUrl(
+        Uri.parse('$projectUrl/auth/v1/user'),
+      );
+      authRequest.headers
+        ..set(HttpHeaders.authorizationHeader, 'Bearer $accessToken')
+        ..set('apikey', publishableKey);
+      final authResponse = await authRequest.close();
+      final responseText = await utf8.decodeStream(authResponse);
+      if (authResponse.statusCode != HttpStatus.ok) {
+        return _error(401, 'Google authentication could not be verified.');
+      }
+      identity = jsonDecode(responseText) as Map<String, dynamic>;
+    } on Object {
+      return _error(502, 'Could not contact the authentication service.');
+    } finally {
+      client.close(force: true);
+    }
+
+    final email = '${identity['email'] ?? ''}'.trim().toLowerCase();
+    if (email.isEmpty || identity['email_confirmed_at'] == null) {
+      return _error(401, 'Google did not provide a verified email address.');
+    }
+    final users = store.table('users');
+    var user = _firstOrNull(users.where((item) => item['email'] == email));
+    if (user == null) {
+      final metadata =
+          identity['user_metadata'] as Map<String, dynamic>? ?? const {};
+      final displayName =
+          '${metadata['full_name'] ?? metadata['name'] ?? email.split('@').first}'
+              .trim();
+      var username = email
+          .split('@')
+          .first
+          .toLowerCase()
+          .replaceAll(RegExp(r'[^a-z0-9_]'), '_')
+          .replaceAll(RegExp(r'_+'), '_')
+          .replaceAll(RegExp(r'^_+|_+$'), '');
+      if (username.length < 3) username = 'google_user';
+      if (username.length > 20) username = username.substring(0, 20);
+      final base = username;
+      var suffix = 1;
+      while (users.any((item) => item['username'] == username)) {
+        username = '${base}_${suffix++}';
+      }
+      final passwordHash = security.hashPassword(security.randomToken());
+      final now = _now();
+      user = <String, dynamic>{
+        'id': store.id('usr'),
+        'username': username,
+        'email': email,
+        'displayName': displayName.isEmpty ? username : displayName,
+        'bio': '',
+        'location': '',
+        'avatarUrl': metadata['avatar_url'] ?? metadata['picture'],
+        'coverUrl': null,
+        'passwordSalt': passwordHash.salt,
+        'passwordHash': passwordHash.hash,
+        'accountStatus': 'active',
+        'createdAt': now,
+        'updatedAt': now,
+      };
+      users.add(user);
+    }
+    if (user['accountStatus'] != 'active') {
+      return _error(403, 'This account is not active.');
+    }
+    final tokens = _createSession('${user['id']}');
+    await store.save();
+    return _ok({'user': _publicUser(user), ...tokens});
+  }
+
   Future<Response> _refresh(Request request) async {
     final body = await _body(request);
     final refreshToken = '${body['refreshToken'] ?? ''}';
@@ -157,9 +252,11 @@ class ScenoraApi {
       return _error(401, 'Invalid or expired refresh token.');
     }
     store.table('sessions').remove(session);
-    final tokens = _createSession(session['userId'] as String);
+    final user = _userById('${session['userId']}');
+    if (user == null) return _error(401, 'The account no longer exists.');
+    final tokens = _createSession('${user['id']}');
     await store.save();
-    return _ok(tokens);
+    return _ok({'user': _publicUser(user), ...tokens});
   }
 
   Future<Response> _logout(Request request) async {
@@ -379,12 +476,27 @@ class ScenoraApi {
   Response _listReviews(Request request) {
     final movieId = request.url.queryParameters['movieId'];
     final userId = request.url.queryParameters['userId'];
+    final query = request.url.queryParameters['q']?.trim().toLowerCase();
     final limit = _limit(request);
     Iterable<Map<String, dynamic>> reviews = store.table('reviews');
     if (movieId != null) {
       reviews = reviews.where((r) => r['movieId'] == movieId);
     }
     if (userId != null) reviews = reviews.where((r) => r['userId'] == userId);
+    if (query != null && query.isNotEmpty) {
+      reviews = reviews.where((review) {
+        final movie = _firstOrNull(
+          store
+              .table('movies')
+              .where((item) => '${item['id']}' == '${review['movieId']}'),
+        );
+        final author = _userById('${review['userId']}');
+        return '${movie?['title'] ?? ''}'.toLowerCase().contains(query) ||
+            '${review['text'] ?? ''}'.toLowerCase().contains(query) ||
+            '${author?['displayName'] ?? ''}'.toLowerCase().contains(query) ||
+            '${author?['username'] ?? ''}'.toLowerCase().contains(query);
+      });
+    }
     final viewerId = _authenticatedUser(request)?['id'] as String?;
     final items =
         reviews

@@ -8,12 +8,14 @@ class LoginScreen extends StatefulWidget {
     required this.reason,
     required this.onLogin,
     required this.onRegister,
+    required this.onGoogleLogin,
   });
 
   final String reason;
   final Future<String?> Function(String email, String password) onLogin;
   final Future<String?> Function(String username, String email, String password)
   onRegister;
+  final Future<String?> Function() onGoogleLogin;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -53,6 +55,23 @@ class _LoginScreenState extends State<LoginScreen> {
             _emailController.text.trim(),
             _passwordController.text,
           );
+    if (!mounted) return;
+    if (error == null) {
+      Navigator.pop(context, true);
+    } else {
+      setState(() {
+        _loading = false;
+        _error = error;
+      });
+    }
+  }
+
+  Future<void> _googleLogin() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    final error = await widget.onGoogleLogin();
     if (!mounted) return;
     if (error == null) {
       Navigator.pop(context, true);
@@ -238,15 +257,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 18),
                   OutlinedButton.icon(
-                    onPressed: _loading
-                        ? null
-                        : () => ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Google Sign-In requires Firebase OAuth configuration.',
-                              ),
-                            ),
-                          ),
+                    onPressed: _loading ? null : _googleLogin,
                     icon: const Icon(Icons.g_mobiledata_rounded, size: 28),
                     label: const Padding(
                       padding: EdgeInsets.symmetric(vertical: 12),

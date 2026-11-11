@@ -25,6 +25,8 @@ Future<void> main() async {
     security: SecurityService(pepper: setting('SCENORA_TOKEN_PEPPER')),
     tmdbApiKey: setting('TMDB_API_KEY'),
     tmdbReadAccessToken: setting('TMDB_READ_ACCESS_TOKEN'),
+    supabaseUrl: setting('SUPABASE_URL'),
+    supabasePublishableKey: setting('SUPABASE_PUBLISHABLE_KEY'),
   );
   final server = await shelf_io.serve(
     api.handler,

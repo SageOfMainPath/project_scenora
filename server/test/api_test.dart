@@ -85,6 +85,10 @@ void main() {
       );
       expect(refreshed.status, 200);
       aliceToken = refreshed.body['accessToken'] as String;
+      expect(
+        (refreshed.body['user'] as Map<String, dynamic>)['username'],
+        'alice_reviews',
+      );
 
       final profile = await request(
         'PATCH',
@@ -194,6 +198,22 @@ void main() {
       expect(rankedReview['id'], reviewId);
       expect(rankedReview['viewerRating'], 5);
 
+      final searchedReviews = await request('GET', '/reviews?q=dune');
+      expect(searchedReviews.status, 200);
+      expect(
+        (searchedReviews.body['items'] as List<dynamic>)
+            .cast<Map<String, dynamic>>()
+            .map((item) => item['id']),
+        contains(reviewId),
+      );
+
+      final missingReviews = await request(
+        'GET',
+        '/reviews?q=definitely-not-a-movie',
+      );
+      expect(missingReviews.status, 200);
+      expect(missingReviews.body['items'], isEmpty);
+
       final comment = await request(
         'POST',
         '/reviews/$reviewId/comments',
@@ -224,8 +244,7 @@ void main() {
                 (item) => (item as Map<String, dynamic>)['id'] == reviewId,
               )
               as Map<String, dynamic>;
-      final followedAuthor =
-          followedReview['user'] as Map<String, dynamic>;
+      final followedAuthor = followedReview['user'] as Map<String, dynamic>;
       expect(followedAuthor['isFollowing'], true);
 
       final activity = await request('GET', '/activity', token: aliceToken);

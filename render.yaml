@@ -11,6 +11,10 @@ services:
     envVars:
       - key: SUPABASE_DATABASE_URL
         sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
       - key: TMDB_API_KEY
         sync: false
       - key: TMDB_READ_ACCESS_TOKEN

@@ -198,11 +198,30 @@ class ProfileScreen extends StatelessWidget {
                   style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
                 subtitle: Text(
-                  review.text,
-                  maxLines: 2,
+                  '${review.text}\nYour movie rating: ${review.rating}/5',
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                 ),
-                trailing: StarRating(rating: review.rating, size: 13),
+                trailing: SizedBox(
+                  width: 72,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        review.reviewRatingCount == 0
+                            ? 'Not rated'
+                            : '${review.reviewRating.toStringAsFixed(1)}/5',
+                        style: const TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      Text(
+                        '${review.reviewRatingCount} community rating${review.reviewRatingCount == 1 ? '' : 's'}',
+                        textAlign: TextAlign.end,
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
         ],

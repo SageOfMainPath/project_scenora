@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -21,10 +23,10 @@ class HomeScreen extends StatefulWidget {
     required this.onEditReview,
     required this.onDeleteReview,
     required this.loadMovieReviews,
+    required this.searchReviews,
     required this.addComment,
     required this.getComments,
     required this.onRefresh,
-    required this.onOpenSearch,
     required this.onOpenMessages,
   });
   final List<Review> reviews;
@@ -50,10 +52,10 @@ class HomeScreen extends StatefulWidget {
   onEditReview;
   final Future<bool> Function(Review review) onDeleteReview;
   final Future<List<Review>> Function(String movieId) loadMovieReviews;
+  final Future<List<Review>> Function(String query) searchReviews;
   final Future<String?> Function(Review review, String text) addComment;
   final Future<List<Map<String, dynamic>>> Function(Review review) getComments;
   final Future<void> Function() onRefresh;
-  final VoidCallback onOpenSearch;
   final VoidCallback onOpenMessages;
 
   @override
@@ -62,6 +64,59 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool _followingOnly = false;
+  bool _showSearch = false;
+  bool _searching = false;
+  String _searchQuery = '';
+  String? _searchError;
+  final _searchController = TextEditingController();
+  final List<Review> _searchResults = [];
+  Timer? _searchTimer;
+
+  @override
+  void dispose() {
+    _searchTimer?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    final query = value.trim();
+    setState(() {
+      _searchQuery = query;
+      _searchError = null;
+      if (query.isEmpty) _searchResults.clear();
+    });
+    _searchTimer?.cancel();
+    if (query.isEmpty) return;
+    _searchTimer = Timer(const Duration(milliseconds: 350), () async {
+      setState(() => _searching = true);
+      try {
+        final results = await widget.searchReviews(query);
+        if (!mounted || query != _searchController.text.trim()) return;
+        setState(() {
+          _searchResults
+            ..clear()
+            ..addAll(results);
+        });
+      } on Object catch (error) {
+        if (mounted) setState(() => _searchError = '$error');
+      } finally {
+        if (mounted) setState(() => _searching = false);
+      }
+    });
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _showSearch = !_showSearch;
+      if (!_showSearch) {
+        _searchController.clear();
+        _searchQuery = '';
+        _searchResults.clear();
+        _searchError = null;
+      }
+    });
+  }
 
   void _openMovie(Movie movie) => Navigator.of(context).push(
     MaterialPageRoute(
@@ -80,17 +135,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final source = _searchQuery.isEmpty ? widget.reviews : _searchResults;
     final displayedReviews = _followingOnly
-        ? widget.reviews.where((review) => review.isFollowing).toList()
-        : widget.reviews;
+        ? source.where((review) => review.isFollowing).toList()
+        : source;
     return Scaffold(
       appBar: AppBar(
         title: const BrandMark(),
         actions: [
           IconButton(
-            tooltip: 'Search',
-            onPressed: widget.onOpenSearch,
-            icon: const Icon(Icons.search_rounded),
+            tooltip: _showSearch ? 'Close review search' : 'Search reviews',
+            onPressed: _toggleSearch,
+            icon: Icon(
+              _showSearch ? Icons.close_rounded : Icons.search_rounded,
+            ),
           ),
           Padding(
             padding: const EdgeInsets.only(right: 12),
@@ -107,6 +165,45 @@ class _HomeScreenState extends State<HomeScreen> {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
+            if (_showSearch)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                  child: TextField(
+                    controller: _searchController,
+                    autofocus: true,
+                    textInputAction: TextInputAction.search,
+                    onChanged: _onSearchChanged,
+                    decoration: InputDecoration(
+                      hintText: 'Search a movie to see its reviews',
+                      prefixIcon: const Icon(Icons.movie_filter_outlined),
+                      suffixIcon: _searching
+                          ? const Padding(
+                              padding: EdgeInsets.all(14),
+                              child: SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            )
+                          : null,
+                    ),
+                  ),
+                ),
+              ),
+            if (_searchError != null)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Text(
+                    _searchError!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ),
+              ),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 14),
@@ -149,6 +246,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Text(
                       _followingOnly
                           ? 'No followed reviews yet. Follow a reviewer from the For you feed.'
+                          : _searchQuery.isNotEmpty
+                          ? 'No reviews found for "$_searchQuery".'
                           : 'No reviews yet. Search for a movie and write the first review!',
                       textAlign: TextAlign.center,
                     ),

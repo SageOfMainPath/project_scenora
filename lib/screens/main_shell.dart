@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/api_client.dart';
+import '../core/google_auth.dart';
 import '../models/scenora_models.dart';
 import 'explore_screen.dart';
 import 'home_screen.dart';
@@ -30,6 +31,7 @@ class _MainShellState extends State<MainShell> {
   bool _isLoggedIn = false;
   final ScenoraApiClient _api = ScenoraApiClient();
   final List<Review> _reviews = [];
+  final List<Review> _profileReviews = [];
   final Set<Movie> _watchlist = {};
   final List<ActivityItem> _activities = [];
   Timer? _syncTimer;
@@ -58,6 +60,7 @@ class _MainShellState extends State<MainShell> {
       setState(() {
         _isLoggedIn = false;
         _reviews.clear();
+        _profileReviews.clear();
         _activities.clear();
         _watchlist.clear();
       });
@@ -124,7 +127,12 @@ class _MainShellState extends State<MainShell> {
   Future<void> _loadAccountData() async {
     if (!_isLoggedIn) return;
     try {
-      await Future.wait([_api.profile(), _loadActivity(), _loadWatchlist()]);
+      final profile = await _api.profile();
+      await Future.wait([
+        _loadActivity(),
+        _loadWatchlist(),
+        _loadProfileReviews('${profile['id']}'),
+      ]);
       if (mounted) setState(() {});
     } on ApiException catch (error) {
       if (mounted) {
@@ -133,6 +141,16 @@ class _MainShellState extends State<MainShell> {
         ).showSnackBar(SnackBar(content: Text(error.message)));
       }
     }
+  }
+
+  Future<void> _loadProfileReviews(String userId) async {
+    final items = await _api.reviewsForUser(userId);
+    if (!mounted) return;
+    setState(() {
+      _profileReviews
+        ..clear()
+        ..addAll(items);
+    });
   }
 
   Future<void> _loadActivity() async {
@@ -226,12 +244,30 @@ class _MainShellState extends State<MainShell> {
     }
   }
 
+  Future<String?> _googleLogin() async {
+    try {
+      final token = await signInWithGoogle();
+      await _api.loginWithGoogle(token);
+      return null;
+    } on GoogleAuthException catch (error) {
+      return error.message;
+    } on ApiException catch (error) {
+      return error.message;
+    } on Object catch (error) {
+      return 'Google Sign-In failed: $error';
+    }
+  }
+
   Future<bool> _ensureAuthenticated(String reason) async {
     if (_isLoggedIn) return true;
     final loggedIn = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) =>
-            LoginScreen(reason: reason, onLogin: _login, onRegister: _register),
+        builder: (_) => LoginScreen(
+          reason: reason,
+          onLogin: _login,
+          onRegister: _register,
+          onGoogleLogin: _googleLogin,
+        ),
       ),
     );
     if (loggedIn == true && mounted) {
@@ -251,6 +287,7 @@ class _MainShellState extends State<MainShell> {
     if (!mounted) return;
     setState(() => _isLoggedIn = false);
     _activities.clear();
+    _profileReviews.clear();
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('You have been logged out.')));
@@ -439,10 +476,10 @@ class _MainShellState extends State<MainShell> {
         onEditReview: _editReview,
         onDeleteReview: _deleteReview,
         loadMovieReviews: _api.reviewsForMovie,
+        searchReviews: _api.searchReviews,
         addComment: _addComment,
         getComments: _getComments,
         onRefresh: _refreshAll,
-        onOpenSearch: () => setState(() => _index = 1),
         onOpenMessages: () => setState(() => _index = 2),
       ),
       ExploreScreen(
@@ -477,7 +514,7 @@ class _MainShellState extends State<MainShell> {
         ),
         onLogout: _logout,
         user: _api.currentUser,
-        reviews: _reviews,
+        reviews: _profileReviews,
         serverUrl: _api.baseUrl,
         onServerUrlChanged: _updateServerUrl,
         onUpdateProfile: _updateProfile,

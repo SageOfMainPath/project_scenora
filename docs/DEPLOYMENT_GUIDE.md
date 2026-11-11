@@ -54,3 +54,20 @@ The APK is written to `build/app/outputs/flutter-apk/app-release.apk`.
 
 A free Render service may sleep when idle. Open its `/health` URL a few minutes
 before presenting, then test login and movie search from the phone.
+
+## 6. Google Sign-In
+
+SCENORA uses Supabase Auth only to verify Google identity, then exchanges that
+verified identity for a normal SCENORA backend session.
+
+1. In Google Cloud, create a Web OAuth client and configure the consent screen.
+2. In Supabase, open **Authentication > Providers > Google**, enable it, and
+   enter the Google Client ID and Client Secret. Add the Supabase callback URL
+   shown on that page to Google Cloud's authorized redirect URIs.
+3. In Supabase **Authentication > URL Configuration**, add this redirect URL:
+   `scenora://login-callback/`.
+4. Copy the project URL and publishable key from Supabase project settings.
+5. Add `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` to the Render service.
+6. Add GitHub Actions repository variables with the same two names, then build
+   a fresh APK. The publishable key is designed for client applications; never
+   use or expose the Supabase secret/service-role key.
