@@ -3,6 +3,8 @@ import 'dart:io';
 import 'dart:math';
 
 abstract class ScenoraStore {
+  String get persistence;
+
   Map<String, dynamic> get data;
 
   List<Map<String, dynamic>> table(String name);
@@ -24,6 +26,9 @@ class JsonStore implements ScenoraStore {
       _saveSync();
     }
   }
+
+  @override
+  String get persistence => 'json';
 
   final String path;
   late final File _file;

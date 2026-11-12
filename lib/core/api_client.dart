@@ -17,21 +17,24 @@ class ApiException implements Exception {
 }
 
 class ScenoraApiClient {
-  ScenoraApiClient({String? baseUrl})
-    : _baseUrl =
+  ScenoraApiClient({String? baseUrl, String? productionBaseUrl})
+    : _productionBaseUrl = productionBaseUrl ?? _compiledBaseUrl,
+      _baseUrl =
           baseUrl ??
-          const String.fromEnvironment(
-            'SCENORA_API_URL',
-            defaultValue: 'http://192.168.206.103:8080',
-          );
+          ((productionBaseUrl ?? _compiledBaseUrl).isNotEmpty
+              ? (productionBaseUrl ?? _compiledBaseUrl)
+              : 'http://192.168.206.103:8080');
 
   static const _serverUrlKey = 'scenora_server_url';
   static const _accessTokenKey = 'scenora_access_token';
   static const _refreshTokenKey = 'scenora_refresh_token';
+  static const _compiledBaseUrl = String.fromEnvironment('SCENORA_API_URL');
   static const _secureStorage = FlutterSecureStorage();
 
   String _baseUrl;
+  final String _productionBaseUrl;
   String get baseUrl => _baseUrl;
+  bool get isProductionServerLocked => _productionBaseUrl.isNotEmpty;
   String? accessToken;
   String? refreshToken;
   Map<String, dynamic>? currentUser;
@@ -41,7 +44,14 @@ class ScenoraApiClient {
 
   Future<bool> initialize() async {
     final preferences = await SharedPreferences.getInstance();
-    _baseUrl = preferences.getString(_serverUrlKey) ?? _baseUrl;
+    if (isProductionServerLocked) {
+      // APK upgrades retain SharedPreferences. Remove old demo IP/Cloudflare
+      // addresses so a production build always talks to the Render backend.
+      _baseUrl = _productionBaseUrl.replaceFirst(RegExp(r'/+$'), '');
+      await preferences.remove(_serverUrlKey);
+    } else {
+      _baseUrl = preferences.getString(_serverUrlKey) ?? _baseUrl;
+    }
     try {
       accessToken = await _secureStorage.read(key: _accessTokenKey);
       refreshToken = await _secureStorage.read(key: _refreshTokenKey);
@@ -62,6 +72,11 @@ class ScenoraApiClient {
   }
 
   Future<void> updateBaseUrl(String value) async {
+    if (isProductionServerLocked) {
+      throw const ApiException(
+        'This release is permanently connected to the SCENORA cloud server.',
+      );
+    }
     var normalized = value.trim();
     if (!normalized.startsWith('http://') &&
         !normalized.startsWith('https://')) {

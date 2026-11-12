@@ -18,6 +18,7 @@ class ProfileScreen extends StatelessWidget {
     required this.serverUrl,
     required this.onServerUrlChanged,
     required this.onUpdateProfile,
+    required this.canChangeServer,
     required this.onFollowersTap,
     required this.onFollowingTap,
   });
@@ -39,6 +40,7 @@ class ProfileScreen extends StatelessWidget {
     String location,
   )
   onUpdateProfile;
+  final bool canChangeServer;
   final VoidCallback onFollowersTap;
   final VoidCallback onFollowingTap;
 
@@ -280,11 +282,15 @@ class ProfileScreen extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              trailing: const Icon(Icons.edit_outlined),
-              onTap: () {
-                Navigator.pop(context);
-                _showServerSettings(context);
-              },
+              trailing: Icon(
+                canChangeServer ? Icons.edit_outlined : Icons.cloud_done,
+              ),
+              onTap: canChangeServer
+                  ? () {
+                      Navigator.pop(context);
+                      _showServerSettings(context);
+                    }
+                  : null,
             ),
             const Divider(),
             ListTile(

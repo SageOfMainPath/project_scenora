@@ -15,6 +15,7 @@ class ExploreScreen extends StatefulWidget {
     required this.onToggleWatchlist,
     required this.onWriteReview,
     required this.onSearch,
+    required this.onLoadPopular,
     required this.reviews,
     required this.requireAuth,
     required this.onRateReview,
@@ -24,6 +25,7 @@ class ExploreScreen extends StatefulWidget {
   final ValueChanged<Movie> onToggleWatchlist;
   final ValueChanged<Movie?> onWriteReview;
   final Future<List<Movie>> Function(String query) onSearch;
+  final Future<List<Movie>> Function() onLoadPopular;
   final List<Review> reviews;
   final Future<bool> Function(String reason) requireAuth;
   final Future<({double score, int count, int viewerRating})?> Function(
@@ -41,11 +43,15 @@ class _ExploreScreenState extends State<ExploreScreen> {
   String _query = '';
   String _genre = 'All';
   List<Movie> _remoteResults = const [];
+  List<Movie> _popularResults = const [];
   Timer? _searchTimer;
   bool _searching = false;
   String? _searchError;
 
-  List<Movie> get _results => (_query.isEmpty ? movies : _remoteResults)
+  List<Movie> get _popularMovies =>
+      _popularResults.isEmpty ? movies : _popularResults;
+
+  List<Movie> get _results => (_query.isEmpty ? _popularMovies : _remoteResults)
       .where(
         (movie) =>
             (_query.isEmpty ||
@@ -53,6 +59,28 @@ class _ExploreScreenState extends State<ExploreScreen> {
             (_genre == 'All' || movie.genre.contains(_genre)),
       )
       .toList();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPopular();
+  }
+
+  Future<void> _loadPopular() async {
+    if (mounted) setState(() => _searching = true);
+    try {
+      final result = await widget.onLoadPopular();
+      if (!mounted) return;
+      setState(() {
+        _popularResults = result;
+        _searchError = null;
+      });
+    } catch (error) {
+      if (mounted) setState(() => _searchError = '$error');
+    } finally {
+      if (mounted) setState(() => _searching = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -203,11 +231,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
               child: ListView.separated(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 scrollDirection: Axis.horizontal,
-                itemCount: movies.length,
+                itemCount: _popularMovies.length,
                 separatorBuilder: (_, _) => const SizedBox(width: 14),
                 itemBuilder: (_, i) => _MovieTile(
-                  movie: movies[i],
-                  onTap: () => _open(movies[i]),
+                  movie: _popularMovies[i],
+                  onTap: () => _open(_popularMovies[i]),
                   width: 125,
                 ),
               ),
@@ -222,7 +250,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
           SliverList.builder(
             itemCount: 4,
             itemBuilder: (_, i) {
-              final movie = movies[(i + 2) % movies.length];
+              final movie = _popularMovies[(i + 2) % _popularMovies.length];
               return ListTile(
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 20,

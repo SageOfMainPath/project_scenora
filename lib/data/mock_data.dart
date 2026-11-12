@@ -5,6 +5,8 @@ import '../models/scenora_models.dart';
 const movies = <Movie>[
   Movie(
     id: '693134',
+    posterUrl:
+        'https://image.tmdb.org/t/p/w500/6izwz7rsy95ARzTR3poZ8H6c5pp.jpg',
     title: 'Dune: Part Two',
     year: 2024,
     genre: 'Sci-Fi · Adventure',
@@ -17,6 +19,8 @@ const movies = <Movie>[
   ),
   Movie(
     id: '872585',
+    posterUrl:
+        'https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg',
     title: 'Oppenheimer',
     year: 2023,
     genre: 'Biography · Drama',
@@ -29,6 +33,8 @@ const movies = <Movie>[
   ),
   Movie(
     id: '666277',
+    posterUrl:
+        'https://image.tmdb.org/t/p/w500/k3waqVXSnvCZWfJYNtdamTgTtTA.jpg',
     title: 'Past Lives',
     year: 2023,
     genre: 'Drama · Romance',
@@ -41,6 +47,8 @@ const movies = <Movie>[
   ),
   Movie(
     id: '414906',
+    posterUrl:
+        'https://image.tmdb.org/t/p/w500/74xTEgt7R36Fpooo50r9T25onhq.jpg',
     title: 'The Batman',
     year: 2022,
     genre: 'Crime · Mystery',
@@ -53,6 +61,8 @@ const movies = <Movie>[
   ),
   Movie(
     id: '569094',
+    posterUrl:
+        'https://image.tmdb.org/t/p/w500/8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg',
     title: 'Spider-Verse',
     year: 2023,
     genre: 'Animation · Action',

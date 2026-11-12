@@ -8,6 +8,9 @@ import 'store.dart';
 class PostgresStore implements ScenoraStore {
   PostgresStore._(this._connection);
 
+  @override
+  String get persistence => 'supabase-postgres';
+
   static Future<PostgresStore> open(String connectionString) async {
     var url = connectionString.trim();
     if (!url.contains('sslmode=')) {

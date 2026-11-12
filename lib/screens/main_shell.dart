@@ -390,9 +390,8 @@ class _MainShellState extends State<MainShell> {
         builder: (_) => UserConnectionsScreen(
           title: followers ? 'Followers' : 'Following',
           currentUserId: userId,
-          loadUsers: () => followers
-              ? _api.followers(userId)
-              : _api.following(userId),
+          loadUsers: () =>
+              followers ? _api.followers(userId) : _api.following(userId),
           onToggleFollow: _toggleFollowUser,
         ),
       ),
@@ -528,6 +527,7 @@ class _MainShellState extends State<MainShell> {
         onToggleWatchlist: _toggleWatchlist,
         onWriteReview: _openComposer,
         onSearch: _api.searchMovies,
+        onLoadPopular: _api.popularMovies,
         requireAuth: _ensureAuthenticated,
         onRateReview: _rateReview,
         loadMovieReviews: _api.reviewsForMovie,
@@ -558,6 +558,7 @@ class _MainShellState extends State<MainShell> {
         serverUrl: _api.baseUrl,
         onServerUrlChanged: _updateServerUrl,
         onUpdateProfile: _updateProfile,
+        canChangeServer: !_api.isProductionServerLocked,
         onFollowersTap: () => _openConnections(followers: true),
         onFollowingTap: () => _openConnections(followers: false),
       ),
