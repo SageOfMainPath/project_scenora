@@ -68,4 +68,60 @@ void main() {
       expect(refreshCount, 2);
     },
   );
+
+  test(
+    'review feed accepts PostgreSQL numeric values encoded as strings',
+    () async {
+      HttpOverrides.global = null;
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      final subscription = server.listen((request) async {
+        expect(request.uri.path, '/reviews');
+        request.response
+          ..statusCode = HttpStatus.ok
+          ..headers.contentType = ContentType.json
+          ..write(
+            jsonEncode({
+              'items': [
+                {
+                  'id': 'review-1',
+                  'userId': 'user-1',
+                  'rating': '4',
+                  'text': 'Persisted review',
+                  'likeCount': '2',
+                  'commentCount': '1',
+                  'reviewRating': '4.5',
+                  'reviewRatingCount': '2',
+                  'user': {'username': 'tester', 'displayName': 'Tester'},
+                  'movie': {
+                    'id': 'movie-1',
+                    'title': 'Persisted Movie',
+                    'year': '2026',
+                    'genre': 'Drama',
+                    'tmdbRating': '7.8',
+                    'scenoraRating': '4.0',
+                  },
+                },
+              ],
+            }),
+          );
+        await request.response.close();
+      });
+      addTearDown(() async {
+        await subscription.cancel();
+        await server.close(force: true);
+      });
+
+      final client = ScenoraApiClient(
+        baseUrl: 'http://127.0.0.1:${server.port}',
+        productionBaseUrl: '',
+      );
+      final reviews = await client.reviews();
+
+      expect(reviews, hasLength(1));
+      expect(reviews.single.movie.score, 7.8);
+      expect(reviews.single.reviewRating, 4.5);
+      expect(reviews.single.rating, 4);
+      expect(reviews.single.likes, 2);
+    },
+  );
 }

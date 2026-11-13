@@ -70,7 +70,8 @@ class PostgresStore implements ScenoraStore {
         from scenora.sessions
       '''),
       'movies': await _query('''
-        select id, title, year, genre, overview, tmdb_rating as "tmdbRating",
+        select id, title, year, genre, overview,
+          tmdb_rating::double precision as "tmdbRating",
           poster_path as "posterPath", backdrop_path as "backdropPath"
         from scenora.movies order by title
       '''),

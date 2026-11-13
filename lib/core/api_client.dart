@@ -389,9 +389,9 @@ class ScenoraApiClient {
       body: {'rating': rating},
     );
     return (
-      score: (result['reviewRating'] as num?)?.toDouble() ?? 0,
-      count: (result['reviewRatingCount'] as num?)?.toInt() ?? 0,
-      viewerRating: (result['viewerRating'] as num?)?.toInt() ?? rating,
+      score: _asDouble(result['reviewRating']),
+      count: _asInt(result['reviewRatingCount']),
+      viewerRating: _asInt(result['viewerRating'], fallback: rating),
     );
   }
 
@@ -536,10 +536,10 @@ class ScenoraApiClient {
           ? posterPath
           : 'https://image.tmdb.org/t/p/w500$posterPath',
       title: title,
-      year: (json['year'] as num?)?.toInt() ?? 0,
+      year: _asInt(json['year']),
       genre: '${json['genre'] ?? 'Movie · TMDB'}',
-      score: (json['tmdbRating'] as num?)?.toDouble() ?? 0,
-      communityScore: (json['scenoraRating'] as num?)?.toDouble() ?? 0,
+      score: _asDouble(json['tmdbRating']),
+      communityScore: _asDouble(json['scenoraRating']),
       colors: palette,
       initials: initials.isEmpty ? 'M' : initials,
       synopsis: '${json['overview'] ?? 'No storyline is available yet.'}',
@@ -560,16 +560,18 @@ class ScenoraApiClient {
           ? null
           : '${user['avatarUrl']}',
       movie: _movie(movie),
-      rating: (json['rating'] as num?)?.toInt() ?? 0,
+      rating: _asInt(json['rating']),
       text: '${json['text'] ?? ''}',
       time: 'now',
-      likes: (json['likeCount'] as num?)?.toInt() ?? 0,
-      comments: (json['commentCount'] as num?)?.toInt() ?? 0,
+      likes: _asInt(json['likeCount']),
+      comments: _asInt(json['commentCount']),
       liked: json['liked'] == true,
       spoiler: json['containsSpoiler'] == true,
-      reviewRating: (json['reviewRating'] as num?)?.toDouble() ?? 0,
-      reviewRatingCount: (json['reviewRatingCount'] as num?)?.toInt() ?? 0,
-      viewerRating: (json['viewerRating'] as num?)?.toInt(),
+      reviewRating: _asDouble(json['reviewRating']),
+      reviewRatingCount: _asInt(json['reviewRatingCount']),
+      viewerRating: json['viewerRating'] == null
+          ? null
+          : _asInt(json['viewerRating']),
       isFollowing: user['isFollowing'] == true,
     );
   }
@@ -642,5 +644,15 @@ class ScenoraApiClient {
       [Color(0xFF8C48E8), Color(0xFFEC3B61)],
     ];
     return palettes[seed.hashCode.abs() % palettes.length];
+  }
+
+  double _asDouble(Object? value, {double fallback = 0}) {
+    if (value is num) return value.toDouble();
+    return double.tryParse('${value ?? ''}') ?? fallback;
+  }
+
+  int _asInt(Object? value, {int fallback = 0}) {
+    if (value is num) return value.toInt();
+    return num.tryParse('${value ?? ''}')?.toInt() ?? fallback;
   }
 }

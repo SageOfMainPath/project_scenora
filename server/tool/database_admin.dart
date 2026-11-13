@@ -34,7 +34,7 @@ Future<void> main(List<String> arguments) async {
     if (!arguments.contains('--reset') ||
         !arguments.contains('--confirm=RESET_SCENORA')) {
       stdout.writeln(
-        'Use --status, or --reset --confirm=RESET_SCENORA to erase demo data.',
+        'Use --status, or --reset --confirm=RESET_SCENORA to erase accounts and community data.',
       );
       return;
     }
@@ -51,10 +51,12 @@ Future<void> main(List<String> arguments) async {
           scenora.watchlist,
           scenora.follows,
           scenora.reviews,
-          scenora.movies,
           scenora.users
         restart identity cascade
       ''');
+      // Supabase Auth users are separate from SCENORA's custom user table.
+      // Clear them as part of an explicitly confirmed full demo reset.
+      await tx.execute('delete from auth.users');
     });
     stdout.writeln('After reset:');
     await _printCounts(connection);
@@ -70,6 +72,8 @@ Future<void> _printCounts(Connection connection) async {
     );
     stdout.writeln('$table: ${result.first.first}');
   }
+  final authUsers = await connection.execute('select count(*) from auth.users');
+  stdout.writeln('auth.users: ${authUsers.first.first}');
 }
 
 Map<String, String> _loadEnvironment(String path) {
