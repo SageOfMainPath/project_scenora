@@ -550,6 +550,7 @@ class _ReviewCardState extends State<ReviewCard> {
                   name: review.user,
                   color: review.avatarColor,
                   radius: 21,
+                  imageUrl: review.avatarUrl,
                 ),
                 const SizedBox(width: 11),
                 Expanded(

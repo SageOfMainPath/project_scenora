@@ -82,7 +82,7 @@ class ScenoraApi {
   Response _health(Request request) => _ok({
     'status': 'ok',
     'service': 'scenora-backend',
-    'version': '1.6.0',
+    'version': '1.7.0',
     'database': store.persistence,
     'time': DateTime.now().toUtc().toIso8601String(),
   });
@@ -283,6 +283,18 @@ class ScenoraApi {
     final user = _authenticatedUser(request);
     if (user == null) return _error(401, 'Authentication required.');
     final body = await _body(request);
+    if (body.containsKey('avatarUrl')) {
+      final avatar = '${body['avatarUrl'] ?? ''}'.trim();
+      final isRemote =
+          avatar.startsWith('https://') || avatar.startsWith('http://');
+      final isInlineImage =
+          avatar.startsWith('data:image/') && avatar.contains(';base64,');
+      if (avatar.length > 1250000 ||
+          (avatar.isNotEmpty && !isRemote && !isInlineImage)) {
+        return _error(400, 'Choose a valid profile photo under 900 KB.');
+      }
+      body['avatarUrl'] = avatar;
+    }
     const allowed = ['displayName', 'bio', 'location', 'avatarUrl', 'coverUrl'];
     for (final field in allowed) {
       if (body.containsKey(field)) user[field] = body[field];

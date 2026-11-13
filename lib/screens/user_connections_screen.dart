@@ -67,10 +67,7 @@ class _UserConnectionsScreenState extends State<UserConnectionsScreen> {
                 const SizedBox(height: 120),
                 const Icon(Icons.cloud_off_outlined, size: 48),
                 const SizedBox(height: 16),
-                Text(
-                  '${snapshot.error}',
-                  textAlign: TextAlign.center,
-                ),
+                Text('${snapshot.error}', textAlign: TextAlign.center),
                 const SizedBox(height: 16),
                 FilledButton(onPressed: _refresh, child: const Text('Retry')),
               ],
@@ -101,7 +98,8 @@ class _UserConnectionsScreenState extends State<UserConnectionsScreen> {
             itemBuilder: (context, index) {
               final user = users[index];
               final userId = '${user['id'] ?? ''}';
-              final name = '${user['displayName'] ?? user['username'] ?? 'User'}';
+              final name =
+                  '${user['displayName'] ?? user['username'] ?? 'User'}';
               final username = '${user['username'] ?? 'member'}';
               final isMe = userId == widget.currentUserId;
               final isFollowing = user['isFollowing'] == true;
@@ -113,6 +111,7 @@ class _UserConnectionsScreenState extends State<UserConnectionsScreen> {
                   name: name,
                   color: const Color(0xFF5F6BEA),
                   radius: 23,
+                  imageUrl: '${user['avatarUrl'] ?? ''}',
                 ),
                 title: Text(
                   name,
@@ -126,7 +125,9 @@ class _UserConnectionsScreenState extends State<UserConnectionsScreen> {
                         child: isBusy
                             ? const SizedBox.square(
                                 dimension: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : Text(isFollowing ? 'Following' : 'Follow'),
                       ),

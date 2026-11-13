@@ -76,12 +76,14 @@ class _MainShellState extends State<MainShell> {
     String displayName,
     String bio,
     String location,
+    String? avatarUrl,
   ) async {
     try {
       await _api.updateProfile(
         displayName: displayName,
         bio: bio,
         location: location,
+        avatarUrl: avatarUrl,
       );
       if (mounted) setState(() {});
       return null;
@@ -122,6 +124,14 @@ class _MainShellState extends State<MainShell> {
           context,
         ).showSnackBar(SnackBar(content: Text(error.message)));
       }
+    } on Object {
+      if (mounted && showErrors) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Reviews could not be loaded. Pull down to retry.'),
+          ),
+        );
+      }
     }
   }
 
@@ -129,10 +139,12 @@ class _MainShellState extends State<MainShell> {
     if (!_isLoggedIn) return;
     try {
       final profile = await _api.profile();
+      // Load the most important profile content first. A temporary failure in
+      // activity or watchlist must not hide the user's persisted reviews.
+      await _loadProfileReviews('${profile['id']}');
       await Future.wait([
-        _loadActivity(),
-        _loadWatchlist(),
-        _loadProfileReviews('${profile['id']}'),
+        _loadActivity().catchError((_) {}),
+        _loadWatchlist().catchError((_) {}),
       ]);
       if (mounted) setState(() {});
     } on ApiException catch (error) {
@@ -286,9 +298,12 @@ class _MainShellState extends State<MainShell> {
   void _logout() async {
     await _api.logout();
     if (!mounted) return;
-    setState(() => _isLoggedIn = false);
-    _activities.clear();
-    _profileReviews.clear();
+    setState(() {
+      _isLoggedIn = false;
+      _activities.clear();
+      _profileReviews.clear();
+      _watchlist.clear();
+    });
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('You have been logged out.')));

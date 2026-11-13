@@ -94,12 +94,20 @@ void main() {
         'PATCH',
         '/users/me',
         token: aliceToken,
-        body: {'bio': 'Cinema is my favourite language.', 'location': 'Dhaka'},
+        body: {
+          'bio': 'Cinema is my favourite language.',
+          'location': 'Dhaka',
+          'avatarUrl': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB',
+        },
       );
       expect(profile.status, 200);
       expect(
         (profile.body['user'] as Map<String, dynamic>)['location'],
         'Dhaka',
+      );
+      expect(
+        (profile.body['user'] as Map<String, dynamic>)['avatarUrl'],
+        startsWith('data:image/png;base64,'),
       );
 
       final movies = await request('GET', '/movies/search?q=Dune');
@@ -145,6 +153,18 @@ void main() {
       expect(review.status, 201);
       final reviewId =
           (review.body['review'] as Map<String, dynamic>)['id'] as String;
+      final ownReviews = await request(
+        'GET',
+        '/reviews?userId=$aliceId&limit=100',
+        token: aliceToken,
+      );
+      expect(ownReviews.status, 200);
+      expect((ownReviews.body['items'] as List<dynamic>).length, 1);
+      expect(
+        ((ownReviews.body['items'] as List<dynamic>).first
+            as Map<String, dynamic>)['userId'],
+        aliceId,
+      );
 
       final unauthorizedLike = await request('POST', '/reviews/$reviewId/like');
       expect(unauthorizedLike.status, 401);

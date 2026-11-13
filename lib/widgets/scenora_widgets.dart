@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import '../core/scenora_theme.dart';
@@ -43,25 +45,54 @@ class UserAvatar extends StatelessWidget {
     required this.name,
     required this.color,
     this.radius = 20,
+    this.imageUrl,
   });
   final String name;
   final Color color;
   final double radius;
+  final String? imageUrl;
 
   @override
   Widget build(BuildContext context) {
     final initials = name.split(' ').take(2).map((part) => part[0]).join();
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: color,
-      child: Text(
-        initials,
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w800,
-          fontSize: radius * .62,
+    final fallback = ColoredBox(
+      color: color,
+      child: Center(
+        child: Text(
+          initials,
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+            fontSize: radius * .62,
+          ),
         ),
       ),
+    );
+    final value = imageUrl?.trim() ?? '';
+    Widget image = fallback;
+    if (value.startsWith('data:image/') && value.contains(',')) {
+      try {
+        image = Image.memory(
+          base64Decode(value.substring(value.indexOf(',') + 1)),
+          fit: BoxFit.cover,
+          width: radius * 2,
+          height: radius * 2,
+          errorBuilder: (_, _, _) => fallback,
+        );
+      } on FormatException {
+        image = fallback;
+      }
+    } else if (value.startsWith('https://') || value.startsWith('http://')) {
+      image = Image.network(
+        value,
+        fit: BoxFit.cover,
+        width: radius * 2,
+        height: radius * 2,
+        errorBuilder: (_, _, _) => fallback,
+      );
+    }
+    return ClipOval(
+      child: SizedBox.square(dimension: radius * 2, child: image),
     );
   }
 }

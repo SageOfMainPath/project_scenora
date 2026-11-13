@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../models/scenora_models.dart';
 import '../widgets/scenora_widgets.dart';
@@ -38,6 +41,7 @@ class ProfileScreen extends StatelessWidget {
     String displayName,
     String bio,
     String location,
+    String? avatarUrl,
   )
   onUpdateProfile;
   final bool canChangeServer;
@@ -48,10 +52,10 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final username = '${user?['username'] ?? 'guest'}';
     final displayName = '${user?['displayName'] ?? 'Guest'}';
-    final userId = '${user?['id'] ?? ''}';
-    final ownReviews = reviews
-        .where((review) => review.userId == userId)
-        .toList();
+    // The backend endpoint is already scoped to the signed-in user. Avoid a
+    // second client-side ID filter, which could hide valid persisted reviews.
+    final ownReviews = isLoggedIn ? reviews : const <Review>[];
+    final effectiveWatchlist = isLoggedIn ? watchlist : const <Movie>{};
     final bio = '${user?['bio'] ?? ''}'.trim();
     final location = '${user?['location'] ?? ''}'.trim();
 
@@ -78,6 +82,7 @@ class ProfileScreen extends StatelessWidget {
                   name: displayName,
                   color: const Color(0xFF5F6BEA),
                   radius: 46,
+                  imageUrl: '${user?['avatarUrl'] ?? ''}',
                 ),
                 const SizedBox(height: 13),
                 Text(
@@ -138,7 +143,7 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SectionTitle(title: 'My watchlist'),
-          if (watchlist.isEmpty)
+          if (effectiveWatchlist.isEmpty)
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Text('Your watchlist is empty.'),
@@ -149,10 +154,10 @@ class ProfileScreen extends StatelessWidget {
               child: ListView.separated(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 scrollDirection: Axis.horizontal,
-                itemCount: watchlist.length,
+                itemCount: effectiveWatchlist.length,
                 separatorBuilder: (_, _) => const SizedBox(width: 12),
                 itemBuilder: (_, index) {
-                  final movie = watchlist.elementAt(index);
+                  final movie = effectiveWatchlist.elementAt(index);
                   return InkWell(
                     onTap: () => onMovieTap(movie),
                     child: SizedBox(
@@ -211,8 +216,9 @@ class ProfileScreen extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 trailing: SizedBox(
-                  width: 72,
+                  width: 104,
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
@@ -225,6 +231,8 @@ class ProfileScreen extends StatelessWidget {
                       Text(
                         '${review.reviewRatingCount} community rating${review.reviewRatingCount == 1 ? '' : 's'}',
                         textAlign: TextAlign.end,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.labelSmall,
                       ),
                     ],
@@ -398,6 +406,7 @@ class ProfileScreen extends StatelessWidget {
       text: '${user?['location'] ?? ''}',
     );
     var saving = false;
+    var avatarUrl = '${user?['avatarUrl'] ?? ''}'.trim();
     String? error;
     await showDialog<void>(
       context: context,
@@ -408,6 +417,63 @@ class ProfileScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                UserAvatar(
+                  name: nameController.text.trim().isEmpty
+                      ? 'User'
+                      : nameController.text.trim(),
+                  color: const Color(0xFF5F6BEA),
+                  radius: 38,
+                  imageUrl: avatarUrl,
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: saving
+                      ? null
+                      : () async {
+                          try {
+                            final photo = await ImagePicker().pickImage(
+                              source: ImageSource.gallery,
+                              maxWidth: 512,
+                              maxHeight: 512,
+                              imageQuality: 75,
+                            );
+                            if (photo == null) return;
+                            final bytes = await photo.readAsBytes();
+                            if (bytes.length > 900 * 1024) {
+                              setDialogState(
+                                () => error =
+                                    'Choose a smaller photo (maximum 900 KB).',
+                              );
+                              return;
+                            }
+                            final mime =
+                                photo.mimeType?.startsWith('image/') == true
+                                ? photo.mimeType!
+                                : 'image/jpeg';
+                            setDialogState(() {
+                              avatarUrl =
+                                  'data:$mime;base64,${base64Encode(bytes)}';
+                              error = null;
+                            });
+                          } on Object {
+                            setDialogState(
+                              () => error = 'Could not open the photo gallery.',
+                            );
+                          }
+                        },
+                  icon: const Icon(Icons.add_a_photo_outlined),
+                  label: Text(
+                    avatarUrl.isEmpty ? 'Add profile photo' : 'Change photo',
+                  ),
+                ),
+                if (avatarUrl.isNotEmpty)
+                  TextButton(
+                    onPressed: saving
+                        ? null
+                        : () => setDialogState(() => avatarUrl = ''),
+                    child: const Text('Remove photo'),
+                  ),
+                const SizedBox(height: 8),
                 TextField(
                   controller: nameController,
                   decoration: const InputDecoration(labelText: 'Display name'),
@@ -452,6 +518,7 @@ class ProfileScreen extends StatelessWidget {
                         nameController.text.trim(),
                         bioController.text.trim(),
                         locationController.text.trim(),
+                        avatarUrl,
                       );
                       if (!dialogContext.mounted) return;
                       if (result == null) {

@@ -218,12 +218,18 @@ class ScenoraApiClient {
     required String displayName,
     required String bio,
     required String location,
+    String? avatarUrl,
   }) async {
     final result = await _request(
       'PATCH',
       '/users/me',
       authenticated: true,
-      body: {'displayName': displayName, 'bio': bio, 'location': location},
+      body: {
+        'displayName': displayName,
+        'bio': bio,
+        'location': location,
+        'avatarUrl': avatarUrl,
+      },
     );
     currentUser = result['user'] as Map<String, dynamic>;
     return currentUser!;
@@ -550,6 +556,9 @@ class ScenoraApiClient {
       user: name,
       handle: '@${user['username'] ?? 'member'}',
       avatarColor: _palette(name).first,
+      avatarUrl: '${user['avatarUrl'] ?? ''}'.trim().isEmpty
+          ? null
+          : '${user['avatarUrl']}',
       movie: _movie(movie),
       rating: (json['rating'] as num?)?.toInt() ?? 0,
       text: '${json['text'] ?? ''}',

@@ -80,7 +80,11 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           children: [
             Row(
               children: [
-                UserAvatar(name: review.user, color: review.avatarColor),
+                UserAvatar(
+                  name: review.user,
+                  color: review.avatarColor,
+                  imageUrl: review.avatarUrl,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(

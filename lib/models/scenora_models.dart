@@ -41,6 +41,7 @@ class Review {
     required this.user,
     required this.handle,
     required this.avatarColor,
+    this.avatarUrl,
     required this.movie,
     required this.rating,
     required this.text,
@@ -60,6 +61,7 @@ class Review {
   final String user;
   final String handle;
   final Color avatarColor;
+  final String? avatarUrl;
   final Movie movie;
   int rating;
   String text;
