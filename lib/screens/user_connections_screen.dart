@@ -50,7 +50,10 @@ class _UserConnectionsScreenState extends State<UserConnectionsScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(widget.title)),
+    appBar: AppBar(
+      centerTitle: true,
+      title: const ScenoraWordmark(width: 150, height: 42),
+    ),
     body: RefreshIndicator(
       onRefresh: _refresh,
       child: FutureBuilder<List<Map<String, dynamic>>>(
@@ -93,10 +96,22 @@ class _UserConnectionsScreenState extends State<UserConnectionsScreen> {
           return ListView.separated(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(vertical: 12),
-            itemCount: users.length,
+            itemCount: users.length + 1,
             separatorBuilder: (_, _) => const Divider(height: 1, indent: 76),
             itemBuilder: (context, index) {
-              final user = users[index];
+              if (index == 0) {
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                  child: Text(
+                    widget.title,
+                    style: const TextStyle(
+                      fontSize: 27,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                );
+              }
+              final user = users[index - 1];
               final userId = '${user['id'] ?? ''}';
               final name =
                   '${user['displayName'] ?? user['username'] ?? 'User'}';

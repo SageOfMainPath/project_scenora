@@ -143,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         toolbarHeight: 72,
         centerTitle: true,
-        title: const ScenoraLogo(size: 54),
+        title: const ScenoraWordmark(width: 164, height: 46),
         actions: [
           IconButton(
             tooltip: _showSearch ? 'Close review search' : 'Search reviews',

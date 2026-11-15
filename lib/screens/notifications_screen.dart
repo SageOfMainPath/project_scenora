@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/scenora_models.dart';
+import '../widgets/scenora_widgets.dart';
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({
@@ -17,10 +18,8 @@ class NotificationsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text(
-        'Activity',
-        style: TextStyle(fontSize: 27, fontWeight: FontWeight.w900),
-      ),
+      centerTitle: true,
+      title: const ScenoraWordmark(width: 164, height: 46),
     ),
     body: RefreshIndicator(
       onRefresh: isLoggedIn ? onRefresh : () async {},
@@ -48,10 +47,22 @@ class NotificationsScreen extends StatelessWidget {
             )
           : ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 30),
-              itemCount: items.length,
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 30),
+              itemCount: items.length + 1,
               itemBuilder: (context, index) {
-                final item = items[index];
+                if (index == 0) {
+                  return const Padding(
+                    padding: EdgeInsets.fromLTRB(8, 4, 8, 12),
+                    child: Text(
+                      'Activity',
+                      style: TextStyle(
+                        fontSize: 27,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  );
+                }
+                final item = items[index - 1];
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
@@ -75,12 +86,26 @@ class NotificationsScreen extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(item.subtitle),
                     ),
-                    trailing: Text(
-                      item.time,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          item.time,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        if (!item.read) ...[
+                          const SizedBox(width: 8),
+                          const CircleAvatar(
+                            radius: 4,
+                            backgroundColor: Color(0xFFFF7A1A),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 );

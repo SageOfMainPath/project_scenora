@@ -12,6 +12,8 @@ abstract class ScenoraStore {
   String id(String prefix);
 
   Future<void> save();
+
+  Future<void> saveMessage(Map<String, dynamic> message) => save();
 }
 
 class JsonStore implements ScenoraStore {
@@ -67,6 +69,9 @@ class JsonStore implements ScenoraStore {
 
   @override
   Future<void> save() async => _saveSync();
+
+  @override
+  Future<void> saveMessage(Map<String, dynamic> message) => save();
 
   void _saveSync() {
     final temporary = File('$path.tmp');

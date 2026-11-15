@@ -61,7 +61,8 @@ class ProfileScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const BrandMark(compact: true),
+        centerTitle: true,
+        title: const ScenoraWordmark(width: 164, height: 46),
         actions: [
           IconButton(
             onPressed: () => _showSettings(context),

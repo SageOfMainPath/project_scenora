@@ -72,6 +72,29 @@ class ScenoraLogo extends StatelessWidget {
   );
 }
 
+class ScenoraWordmark extends StatelessWidget {
+  const ScenoraWordmark({super.key, this.width = 170, this.height = 48});
+
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: 'SCENORA',
+    image: true,
+    child: SizedBox(
+      width: width,
+      height: height,
+      child: Image.asset(
+        'assets/branding/scenora_wordmark.png',
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
+        errorBuilder: (_, _, _) => const BrandMark(compact: true),
+      ),
+    ),
+  );
+}
+
 class UserAvatar extends StatelessWidget {
   const UserAvatar({
     super.key,

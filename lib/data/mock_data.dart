@@ -156,6 +156,7 @@ const seedMessages = <ChatMessage>[
 
 final seedActivities = <ActivityItem>[
   ActivityItem(
+    id: 'seed-like',
     icon: Icons.favorite_rounded,
     color: const Color(0xFFE5384F),
     title: 'Nadia liked your review',
@@ -163,6 +164,7 @@ final seedActivities = <ActivityItem>[
     time: '4m',
   ),
   ActivityItem(
+    id: 'seed-comment',
     icon: Icons.chat_bubble_rounded,
     color: const Color(0xFF4B8DF8),
     title: 'Rafi commented on your review',
@@ -170,6 +172,7 @@ final seedActivities = <ActivityItem>[
     time: '22m',
   ),
   ActivityItem(
+    id: 'seed-follow',
     icon: Icons.person_add_alt_1_rounded,
     color: const Color(0xFF25B487),
     title: 'Mim started following you',
@@ -177,6 +180,7 @@ final seedActivities = <ActivityItem>[
     time: '1h',
   ),
   ActivityItem(
+    id: 'seed-mention',
     icon: Icons.alternate_email_rounded,
     color: const Color(0xFFFFA43A),
     title: 'Tanvir mentioned you',
@@ -185,6 +189,7 @@ final seedActivities = <ActivityItem>[
     read: true,
   ),
   ActivityItem(
+    id: 'seed-streaming',
     icon: Icons.movie_filter_rounded,
     color: const Color(0xFF9C6ADE),
     title: 'Your watchlist title is now streaming',

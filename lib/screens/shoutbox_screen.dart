@@ -29,12 +29,16 @@ class _ShoutboxScreenState extends State<ShoutboxScreen> {
   final _scroll = ScrollController();
   final List<ChatMessage> _messages = [];
   Timer? _timer;
+  bool _refreshing = false;
 
   @override
   void initState() {
     super.initState();
     _refresh();
-    _timer = Timer.periodic(const Duration(seconds: 4), (_) => _refresh());
+    _timer = Timer.periodic(
+      const Duration(milliseconds: 1500),
+      (_) => _refresh(),
+    );
   }
 
   @override
@@ -46,16 +50,25 @@ class _ShoutboxScreenState extends State<ShoutboxScreen> {
   }
 
   Future<void> _refresh() async {
+    if (_refreshing) return;
+    _refreshing = true;
     try {
       final messages = await widget.loadMessages();
       if (!mounted) return;
-      setState(() {
-        _messages
-          ..clear()
-          ..addAll(messages);
-      });
+      final unchanged =
+          messages.length == _messages.length &&
+          (messages.isEmpty || messages.last.id == _messages.last.id);
+      if (!unchanged) {
+        setState(() {
+          _messages
+            ..clear()
+            ..addAll(messages);
+        });
+      }
     } catch (_) {
       // Keep the current conversation and retry on the next poll.
+    } finally {
+      _refreshing = false;
     }
   }
 
@@ -90,15 +103,26 @@ class _ShoutboxScreenState extends State<ShoutboxScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Shoutbox',
-            style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900),
-          ),
-          Row(
+      centerTitle: true,
+      title: const ScenoraWordmark(width: 164, height: 46),
+      actions: [
+        IconButton(
+          onPressed: () {},
+          icon: const Icon(Icons.info_outline_rounded),
+        ),
+      ],
+    ),
+    body: Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 2),
+          child: Row(
             children: [
+              const Text(
+                'Shoutbox',
+                style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(width: 10),
               Container(
                 width: 7,
                 height: 7,
@@ -109,7 +133,7 @@ class _ShoutboxScreenState extends State<ShoutboxScreen> {
               ),
               const SizedBox(width: 5),
               Text(
-                'Live community chat',
+                'Live',
                 style: TextStyle(
                   fontSize: 11,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -117,17 +141,7 @@ class _ShoutboxScreenState extends State<ShoutboxScreen> {
               ),
             ],
           ),
-        ],
-      ),
-      actions: [
-        IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.info_outline_rounded),
         ),
-      ],
-    ),
-    body: Column(
-      children: [
         Container(
           width: double.infinity,
           margin: const EdgeInsets.fromLTRB(16, 6, 16, 8),

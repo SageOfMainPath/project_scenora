@@ -53,6 +53,27 @@ class PostgresStore implements ScenoraStore {
     await _connection.close();
   }
 
+  @override
+  Future<void> saveMessage(Map<String, dynamic> message) {
+    final next = _saveQueue.then(
+      (_) => _connection.execute(
+        Sql.named('''
+          insert into scenora.messages (id, user_id, text, created_at)
+          values (@id, @userId, @text, @createdAt::timestamptz)
+          on conflict (id) do nothing
+        '''),
+        parameters: {
+          'id': message['id'],
+          'userId': message['userId'],
+          'text': message['text'],
+          'createdAt': message['createdAt'],
+        },
+      ),
+    );
+    _saveQueue = next.then<void>((_) {}).catchError((_) {});
+    return next.then<void>((_) {});
+  }
+
   Future<void> _load() async {
     data = {
       'users': await _query('''

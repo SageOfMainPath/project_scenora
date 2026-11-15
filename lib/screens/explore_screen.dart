@@ -132,13 +132,20 @@ class _ExploreScreenState extends State<ExploreScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text(
-        'Explore',
-        style: TextStyle(fontSize: 27, fontWeight: FontWeight.w900),
-      ),
+      centerTitle: true,
+      title: const ScenoraWordmark(width: 164, height: 46),
     ),
     body: CustomScrollView(
       slivers: [
+        const SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(20, 8, 20, 4),
+            child: Text(
+              'Explore',
+              style: TextStyle(fontSize: 27, fontWeight: FontWeight.w900),
+            ),
+          ),
+        ),
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),

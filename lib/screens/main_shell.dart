@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/api_client.dart';
 import '../core/google_auth.dart';
@@ -169,12 +170,52 @@ class _MainShellState extends State<MainShell> {
   Future<void> _loadActivity() async {
     if (!_isLoggedIn) return;
     final items = await _api.activity();
+    final userId = '${_api.currentUser?['id'] ?? ''}';
+    Set<String> readIds = const {};
+    if (userId.isNotEmpty) {
+      final preferences = await SharedPreferences.getInstance();
+      readIds =
+          preferences.getStringList('scenora_activity_read_$userId')?.toSet() ??
+          <String>{};
+    }
+    for (final item in items) {
+      item.read = readIds.contains(item.id);
+    }
     if (!mounted) return;
     setState(() {
       _activities
         ..clear()
         ..addAll(items);
     });
+  }
+
+  Future<void> _markActivitySeen() async {
+    if (!_isLoggedIn || _activities.isEmpty) return;
+    final userId = '${_api.currentUser?['id'] ?? ''}';
+    if (userId.isEmpty) return;
+    final newlyRead = _activities
+        .where((item) => !item.read && item.id.isNotEmpty)
+        .map((item) => item.id)
+        .toSet();
+    if (newlyRead.isEmpty) return;
+    if (mounted) {
+      setState(() {
+        for (final item in _activities) {
+          item.read = true;
+        }
+      });
+    }
+    final preferences = await SharedPreferences.getInstance();
+    final key = 'scenora_activity_read_$userId';
+    final saved = preferences.getStringList(key)?.toSet() ?? <String>{};
+    saved.addAll(newlyRead);
+    // Bound local history so this preference cannot grow forever.
+    await preferences.setStringList(key, saved.take(500).toList());
+  }
+
+  Future<void> _openActivity() async {
+    await _loadActivity();
+    await _markActivitySeen();
   }
 
   Future<void> _loadWatchlist() async {
@@ -516,6 +557,7 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    final unreadActivityCount = _activities.where((item) => !item.read).length;
     final screens = [
       HomeScreen(
         reviews: _reviews,
@@ -592,7 +634,7 @@ class _MainShellState extends State<MainShell> {
         onDestinationSelected: (value) {
           setState(() => _index = value);
           if (value == 0) _loadReviews();
-          if (value == 3 && _isLoggedIn) _loadActivity();
+          if (value == 3 && _isLoggedIn) unawaited(_openActivity());
           if (value == 4 && _isLoggedIn) _loadAccountData();
         },
         destinations: [
@@ -612,10 +654,10 @@ class _MainShellState extends State<MainShell> {
             label: 'Shoutbox',
           ),
           NavigationDestination(
-            icon: _activities.isEmpty
+            icon: unreadActivityCount == 0
                 ? const Icon(Icons.notifications_outlined)
                 : Badge(
-                    label: Text('${_activities.length}'),
+                    label: Text('$unreadActivityCount'),
                     child: const Icon(Icons.notifications_outlined),
                   ),
             selectedIcon: const Icon(Icons.notifications_rounded),

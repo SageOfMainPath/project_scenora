@@ -7,7 +7,7 @@ void main() {
     await tester.pumpWidget(const ScenoraApp());
     await tester.pumpAndSettle();
 
-    expect(find.bySemanticsLabel('SCENORA logo'), findsWidgets);
+    expect(find.bySemanticsLabel('SCENORA'), findsWidgets);
     expect(find.text('For you'), findsOneWidget);
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('Explore'), findsOneWidget);

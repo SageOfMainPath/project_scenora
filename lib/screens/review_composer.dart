@@ -35,10 +35,8 @@ class _ReviewComposerState extends State<ReviewComposer> {
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.close_rounded),
         ),
-        title: const Text(
-          'Create review',
-          style: TextStyle(fontWeight: FontWeight.w900),
-        ),
+        centerTitle: true,
+        title: const ScenoraWordmark(width: 150, height: 42),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
@@ -52,6 +50,11 @@ class _ReviewComposerState extends State<ReviewComposer> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          const Text(
+            'Create review',
+            style: TextStyle(fontSize: 27, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 18),
           Text(
             'What did you watch?',
             style: Theme.of(

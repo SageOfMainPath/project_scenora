@@ -98,6 +98,7 @@ class ChatMessage {
 
 class ActivityItem {
   ActivityItem({
+    required this.id,
     required this.icon,
     required this.color,
     required this.title,
@@ -106,6 +107,7 @@ class ActivityItem {
     this.read = false,
   });
 
+  final String id;
   final IconData icon;
   final Color color;
   final String title;

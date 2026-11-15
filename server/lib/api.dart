@@ -82,7 +82,7 @@ class ScenoraApi {
   Response _health(Request request) => _ok({
     'status': 'ok',
     'service': 'scenora-backend',
-    'version': '1.8.0',
+    'version': '1.10.0',
     'database': store.persistence,
     'time': DateTime.now().toUtc().toIso8601String(),
   });
@@ -483,7 +483,7 @@ class ScenoraApi {
       'createdAt': _now(),
     };
     store.table('messages').add(message);
-    await store.save();
+    await store.saveMessage(message);
     return _json(201, {'message': _messageView(message)});
   }
 
@@ -575,6 +575,20 @@ class ScenoraApi {
     for (final follow in store.table('follows')) {
       if (follow['followingId'] != userId) continue;
       events.add(_activityView('follow', follow));
+    }
+    for (final follow in store.table('follows')) {
+      if (follow['followerId'] != userId) continue;
+      final followedAt = DateTime.tryParse('${follow['createdAt']}');
+      for (final review in store.table('reviews')) {
+        if (review['userId'] != follow['followingId']) continue;
+        final reviewedAt = DateTime.tryParse('${review['createdAt']}');
+        if (followedAt != null &&
+            reviewedAt != null &&
+            reviewedAt.isBefore(followedAt)) {
+          continue;
+        }
+        events.add(_activityView('followed_review', review, review: review));
+      }
     }
     events.sort((a, b) => '${b['createdAt']}'.compareTo('${a['createdAt']}'));
     return _ok({'items': events.take(_limit(request)).toList()});
@@ -1025,11 +1039,22 @@ class ScenoraApi {
       return rawItems.map<Map<String, dynamic>>((item) {
         final map = item as Map<String, dynamic>;
         final date = '${map['release_date'] ?? ''}';
+        final genreIds = (map['genre_ids'] as List<dynamic>? ?? const [])
+            .whereType<num>()
+            .map((id) => id.toInt());
+        final detailedGenres = (map['genres'] as List<dynamic>? ?? const [])
+            .whereType<Map<String, dynamic>>()
+            .map((genre) => '${genre['name'] ?? ''}')
+            .where((name) => name.isNotEmpty);
+        final genreNames = detailedGenres.isNotEmpty
+            ? detailedGenres
+            : genreIds.map((id) => _tmdbGenres[id]).whereType<String>();
         return {
           'id': '${map['id']}',
           'title': map['title'] ?? map['name'],
           'year': date.length >= 4 ? int.tryParse(date.substring(0, 4)) : null,
           'overview': map['overview'],
+          'genre': genreNames.isEmpty ? 'Movie' : genreNames.join(', '),
           'tmdbRating': map['vote_average'],
           'posterPath': map['poster_path'],
           'backdropPath': map['backdrop_path'],
@@ -1041,6 +1066,28 @@ class ScenoraApi {
       client.close(force: true);
     }
   }
+
+  static const Map<int, String> _tmdbGenres = {
+    28: 'Action',
+    12: 'Adventure',
+    16: 'Animation',
+    35: 'Comedy',
+    80: 'Crime',
+    99: 'Documentary',
+    18: 'Drama',
+    10751: 'Family',
+    14: 'Fantasy',
+    36: 'History',
+    27: 'Horror',
+    10402: 'Music',
+    9648: 'Mystery',
+    10749: 'Romance',
+    878: 'Sci-Fi',
+    10770: 'TV Movie',
+    53: 'Thriller',
+    10752: 'War',
+    37: 'Western',
+  };
 
   Future<Map<String, dynamic>> _body(Request request) async {
     try {

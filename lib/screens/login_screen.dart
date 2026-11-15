@@ -124,9 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  const ScenoraLogo(size: 82),
-                  const SizedBox(height: 18),
-                  const _Wordmark(),
+                  const ScenoraWordmark(width: 260, height: 86),
                   const SizedBox(height: 10),
                   const _Tagline(),
                   const SizedBox(height: 18),
@@ -336,30 +334,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ],
-    ),
-  );
-}
-
-class _Wordmark extends StatelessWidget {
-  const _Wordmark();
-
-  @override
-  Widget build(BuildContext context) => const Text.rich(
-    TextSpan(
-      children: [
-        TextSpan(text: 'SC'),
-        TextSpan(
-          text: 'E',
-          style: TextStyle(color: _LoginScreenState.orange),
-        ),
-        TextSpan(text: 'NORA'),
-      ],
-    ),
-    style: TextStyle(
-      color: Colors.white,
-      fontSize: 38,
-      fontWeight: FontWeight.w900,
-      letterSpacing: 7,
     ),
   );
 }

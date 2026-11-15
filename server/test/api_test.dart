@@ -267,6 +267,27 @@ void main() {
       final followedAuthor = followedReview['user'] as Map<String, dynamic>;
       expect(followedAuthor['isFollowing'], true);
 
+      final newFollowedReview = await request(
+        'POST',
+        '/reviews',
+        token: aliceToken,
+        body: {
+          'movieId': '872585',
+          'rating': 4,
+          'text': 'A thoughtful follow-up review.',
+          'containsSpoiler': false,
+        },
+      );
+      expect(newFollowedReview.status, 201);
+
+      final bobActivity = await request('GET', '/activity', token: bobToken);
+      expect(bobActivity.status, 200);
+      final followedReviewEvents = (bobActivity.body['items'] as List<dynamic>)
+          .cast<Map<String, dynamic>>()
+          .where((item) => item['type'] == 'followed_review');
+      expect(followedReviewEvents, hasLength(1));
+      expect(followedReviewEvents.single['movieTitle'], 'Oppenheimer');
+
       final activity = await request('GET', '/activity', token: aliceToken);
       expect(activity.status, 200);
       final activityItems = activity.body['items'] as List<dynamic>;
@@ -302,7 +323,7 @@ void main() {
       expect(publicProfile.status, 200);
       final publicUser = publicProfile.body['user'] as Map<String, dynamic>;
       expect(publicUser['followerCount'], 1);
-      expect(publicUser['reviewCount'], 1);
+      expect(publicUser['reviewCount'], 2);
       expect(publicUser.containsKey('passwordHash'), false);
     },
   );
@@ -312,10 +333,13 @@ void main() {
     final reviews = reopened.table('reviews');
     final sessions = reopened.table('sessions');
 
-    expect(reviews, hasLength(1));
-    expect(reviews.single['text'], 'A spectacular cinematic experience.');
+    expect(reviews, hasLength(2));
+    expect(
+      reviews.map((review) => review['text']),
+      contains('A spectacular cinematic experience.'),
+    );
     expect(sessions, isNotEmpty);
-    final authorId = reviews.single['userId'];
+    final authorId = reviews.first['userId'];
     expect(
       reopened.table('users').any((user) => user['id'] == authorId),
       isTrue,

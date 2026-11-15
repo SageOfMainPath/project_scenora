@@ -162,6 +162,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           SliverAppBar.large(
             expandedHeight: 310,
             pinned: true,
+            centerTitle: true,
+            title: const ScenoraWordmark(width: 150, height: 42),
             actions: [
               IconButton.filledTonal(
                 onPressed: () {},

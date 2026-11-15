@@ -583,22 +583,26 @@ class ScenoraApiClient {
     final type = '${json['type']}';
     final movieTitle = '${json['movieTitle'] ?? 'your movie'}';
     return ActivityItem(
+      id: '${json['id'] ?? ''}',
       icon: switch (type) {
         'like' => Icons.favorite_rounded,
         'comment' => Icons.chat_bubble_rounded,
         'follow' => Icons.person_add_alt_1_rounded,
+        'followed_review' => Icons.rate_review_rounded,
         _ => Icons.notifications_rounded,
       },
       color: switch (type) {
         'like' => const Color(0xFFE5384F),
         'comment' => const Color(0xFF4B8DF8),
         'follow' => const Color(0xFF25B487),
+        'followed_review' => const Color(0xFFFF7A1A),
         _ => const Color(0xFF9C6ADE),
       },
       title: switch (type) {
         'like' => '$actorName liked your review',
         'comment' => '$actorName commented on your review',
         'follow' => '$actorName started following you',
+        'followed_review' => '$actorName posted a new review',
         _ => 'New activity',
       },
       subtitle: type == 'follow'
