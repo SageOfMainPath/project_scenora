@@ -53,7 +53,7 @@ class ScenoraLogo extends StatelessWidget {
       height: size,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(size * .25),
         boxShadow: [
           BoxShadow(
@@ -64,8 +64,8 @@ class ScenoraLogo extends StatelessWidget {
         ],
       ),
       child: Image.asset(
-        'assets/branding/scenora_logo.jpg',
-        fit: BoxFit.cover,
+        'assets/branding/scenora_logo_transparent.png',
+        fit: BoxFit.contain,
         errorBuilder: (_, _, _) => const Icon(Icons.movie_creation_rounded),
       ),
     ),

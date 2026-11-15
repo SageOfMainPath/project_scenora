@@ -32,14 +32,14 @@ void main() {
     await tester.tap(find.widgetWithText(FloatingActionButton, 'Review'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Log in or sign up'), findsOneWidget);
+    expect(find.text('Login'), findsWidgets);
     expect(
       find.text('Log in to publish reviews and join the SCENORA community.'),
       findsOneWidget,
     );
     expect(find.text('Continue browsing as guest'), findsOneWidget);
-    expect(find.text('Continue with Google'), findsOneWidget);
-    expect(find.text('Email address'), findsNothing);
-    expect(find.text('Password'), findsNothing);
+    expect(find.text('Continue with Google'), findsNothing);
+    expect(find.text('Email address'), findsOneWidget);
+    expect(find.text('Password'), findsOneWidget);
   });
 }
