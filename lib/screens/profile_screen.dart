@@ -58,6 +58,14 @@ class ProfileScreen extends StatelessWidget {
     final effectiveWatchlist = isLoggedIn ? watchlist : const <Movie>{};
     final bio = '${user?['bio'] ?? ''}'.trim();
     final location = '${user?['location'] ?? ''}'.trim();
+    final joined = DateTime.tryParse('${user?['createdAt'] ?? ''}');
+    final sortedReviews = [...ownReviews]
+      ..sort((a, b) {
+        final score = b.reviewRating.compareTo(a.reviewRating);
+        return score != 0
+            ? score
+            : b.reviewRatingCount.compareTo(a.reviewRatingCount);
+      });
 
     return Scaffold(
       appBar: AppBar(
@@ -75,8 +83,20 @@ class ProfileScreen extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 30),
         children: [
           if (!isLoggedIn) _guestBanner(context),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+          Container(
+            margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF6D28D9).withValues(alpha: .85),
+                  const Color(0xFF24102E).withValues(alpha: .72),
+                ],
+              ),
+            ),
             child: Column(
               children: [
                 UserAvatar(
@@ -109,6 +129,16 @@ class ProfileScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                 ],
+                if (joined != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Joined ${_monthName(joined.month)} ${joined.year}',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 18),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -127,6 +157,10 @@ class ProfileScreen extends StatelessWidget {
                       label: 'Following',
                       onTap: isLoggedIn ? onFollowingTap : null,
                     ),
+                    _Stat(
+                      value: '${effectiveWatchlist.length}',
+                      label: 'Saved',
+                    ),
                   ],
                 ),
                 if (isLoggedIn) ...[
@@ -143,7 +177,7 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
           ),
-          const SectionTitle(title: 'My watchlist'),
+          const SectionTitle(title: 'Interested in'),
           if (effectiveWatchlist.isEmpty)
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -186,7 +220,30 @@ class ProfileScreen extends StatelessWidget {
                 },
               ),
             ),
-          const SectionTitle(title: 'My reviews'),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 28, 12, 8),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'My reviews',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Search my reviews',
+                  onPressed: ownReviews.isEmpty
+                      ? null
+                      : () => _searchReviews(context, ownReviews),
+                  icon: const Icon(Icons.search_rounded),
+                ),
+                const Tooltip(
+                  message: 'Sorted by community rating',
+                  child: Icon(Icons.sort_rounded),
+                ),
+              ],
+            ),
+          ),
           if (!isLoggedIn || ownReviews.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -197,53 +254,122 @@ class ProfileScreen extends StatelessWidget {
               ),
             )
           else
-            ...ownReviews.map(
-              (review) => ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-                onTap: () => onMovieTap(review.movie),
-                leading: PosterArt(
-                  movie: review.movie,
-                  width: 44,
-                  height: 62,
-                  radius: 8,
-                ),
-                title: Text(
-                  review.movie.title,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
-                subtitle: Text(
-                  '${review.text}\nYour movie rating: ${review.rating}/5',
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                trailing: SizedBox(
-                  width: 104,
+            ...sortedReviews.map((review) => _profileReviewCard(context, review)),
+        ],
+      ),
+    );
+  }
+
+  String _monthName(int month) => const [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ][month - 1];
+
+  Widget _profileReviewCard(BuildContext context, Review review) => Card(
+    margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+    child: InkWell(
+      onTap: () => onMovieTap(review.movie),
+      borderRadius: BorderRadius.circular(18),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                PosterArt(movie: review.movie, width: 54, height: 76, radius: 9),
+                const SizedBox(width: 12),
+                Expanded(
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Text(review.movie.title,
+                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+                      const SizedBox(height: 5),
+                      StarRating(rating: review.rating, size: 18),
+                      const SizedBox(height: 5),
                       Text(
                         review.reviewRatingCount == 0
-                            ? 'Not rated'
-                            : '${review.reviewRating.toStringAsFixed(1)}/5',
-                        style: const TextStyle(fontWeight: FontWeight.w900),
-                      ),
-                      Text(
-                        '${review.reviewRatingCount} community rating${review.reviewRatingCount == 1 ? '' : 's'}',
-                        textAlign: TextAlign.end,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                            ? 'No community ratings yet'
+                            : '${review.reviewRating.toStringAsFixed(1)}/5 from ${review.reviewRatingCount} community rating${review.reviewRatingCount == 1 ? '' : 's'}',
                         style: Theme.of(context).textTheme.labelSmall,
                       ),
                     ],
                   ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(review.text, maxLines: 4, overflow: TextOverflow.ellipsis),
+            if (review.imageUrls.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              ReviewPhotoGallery(imageUrls: review.imageUrls),
+            ],
+          ],
+        ),
+      ),
+    ),
+  );
+
+  Future<void> _searchReviews(BuildContext context, List<Review> items) async {
+    final controller = TextEditingController();
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          final query = controller.text.trim().toLowerCase();
+          final matches = items.where((review) =>
+            query.isEmpty || review.movie.title.toLowerCase().contains(query) ||
+            review.text.toLowerCase().contains(query)).toList();
+          return Padding(
+            padding: EdgeInsets.fromLTRB(20, 4, 20,
+              MediaQuery.viewInsetsOf(context).bottom + 24),
+            child: SizedBox(
+              height: MediaQuery.sizeOf(context).height * .65,
+              child: Column(
+                children: [
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    onChanged: (_) => setSheetState(() {}),
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.search_rounded),
+                      hintText: 'Search movie or review text',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: matches.isEmpty
+                        ? const Center(child: Text('No matching reviews.'))
+                        : ListView.builder(
+                            itemCount: matches.length,
+                            itemBuilder: (_, index) {
+                              final review = matches[index];
+                              return ListTile(
+                                leading: PosterArt(movie: review.movie,
+                                  width: 40, height: 56, radius: 7),
+                                title: Text(review.movie.title),
+                                subtitle: Text(review.text,
+                                  maxLines: 2, overflow: TextOverflow.ellipsis),
+                                onTap: () {
+                                  Navigator.pop(sheetContext);
+                                  onMovieTap(review.movie);
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ],
               ),
             ),
-        ],
+          );
+        },
       ),
     );
+    controller.dispose();
   }
 
   Widget _guestBanner(BuildContext context) => Container(

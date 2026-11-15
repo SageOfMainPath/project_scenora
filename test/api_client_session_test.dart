@@ -91,6 +91,7 @@ void main() {
                   'commentCount': '1',
                   'reviewRating': '4.5',
                   'reviewRatingCount': '2',
+                  'imageUrls': ['data:image/jpeg;base64,c2Nlbm9yYQ=='],
                   'user': {'username': 'tester', 'displayName': 'Tester'},
                   'movie': {
                     'id': 'movie-1',
@@ -118,6 +119,7 @@ void main() {
       final reviews = await client.reviews();
 
       expect(reviews, hasLength(1));
+      expect(reviews.single.imageUrls, hasLength(1));
       expect(reviews.single.movie.score, 7.8);
       expect(reviews.single.reviewRating, 4.5);
       expect(reviews.single.rating, 4);

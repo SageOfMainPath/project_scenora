@@ -54,6 +54,7 @@ class Review {
     this.reviewRatingCount = 0,
     this.viewerRating,
     this.isFollowing = false,
+    this.imageUrls = const [],
   });
 
   final String? id;
@@ -74,6 +75,7 @@ class Review {
   int reviewRatingCount;
   int? viewerRating;
   bool isFollowing;
+  final List<String> imageUrls;
 }
 
 class ChatMessage {

@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../core/scenora_theme.dart';
 import '../data/mock_data.dart';
@@ -18,6 +21,8 @@ class _ReviewComposerState extends State<ReviewComposer> {
   final _controller = TextEditingController();
   int _rating = 0;
   bool _spoiler = false;
+  final List<String> _imageUrls = [];
+  bool _pickingImages = false;
 
   @override
   void dispose() {
@@ -182,23 +187,112 @@ class _ReviewComposerState extends State<ReviewComposer> {
             secondary: const Icon(Icons.visibility_off_outlined),
           ),
           const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Image picker will be enabled with backend setup.',
+          if (_imageUrls.isNotEmpty) ...[
+            SizedBox(
+              height: 112,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _imageUrls.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 10),
+                itemBuilder: (_, index) => Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: Image.memory(
+                        base64Decode(_imageUrls[index].split(',').last),
+                        width: 112,
+                        height: 112,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    Positioned(
+                      right: 4,
+                      top: 4,
+                      child: IconButton.filled(
+                        visualDensity: VisualDensity.compact,
+                        tooltip: 'Remove photo',
+                        onPressed: () => setState(() => _imageUrls.removeAt(index)),
+                        icon: const Icon(Icons.close_rounded, size: 18),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
+            const SizedBox(height: 12),
+          ],
+          OutlinedButton.icon(
+            onPressed: _pickingImages || _imageUrls.length >= 3
+                ? null
+                : _pickImages,
             icon: const Icon(Icons.add_photo_alternate_outlined),
-            label: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 13),
-              child: Text('Add photos (optional)'),
+            label: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 13),
+              child: Text(
+                _pickingImages
+                    ? 'Opening gallery…'
+                    : _imageUrls.isEmpty
+                    ? 'Add photos (optional)'
+                    : 'Add more (${_imageUrls.length}/3)',
+              ),
             ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            'Up to 3 photos. Images are compressed and saved with your review.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _pickImages() async {
+    setState(() => _pickingImages = true);
+    try {
+      final picked = await ImagePicker().pickMultiImage(
+        imageQuality: 68,
+        maxWidth: 1440,
+        maxHeight: 1440,
+      );
+      if (!mounted || picked.isEmpty) return;
+      final remaining = 3 - _imageUrls.length;
+      var skipped = 0;
+      final additions = <String>[];
+      for (final photo in picked.take(remaining)) {
+        final bytes = await photo.readAsBytes();
+        if (bytes.length > 1400 * 1024) {
+          skipped++;
+          continue;
+        }
+        final mime = photo.mimeType?.startsWith('image/') == true
+            ? photo.mimeType!
+            : 'image/jpeg';
+        additions.add('data:$mime;base64,${base64Encode(bytes)}');
+      }
+      if (!mounted) return;
+      setState(() => _imageUrls.addAll(additions));
+      if (picked.length > remaining || skipped > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              skipped > 0
+                  ? '$skipped large photo was skipped. Maximum size is 1.4 MB.'
+                  : 'You can attach up to 3 photos.',
+            ),
+          ),
+        );
+      }
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open the photo gallery.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _pickingImages = false);
+    }
   }
 
   Future<void> _pickMovie() async {
@@ -249,6 +343,7 @@ class _ReviewComposerState extends State<ReviewComposer> {
       likes: 0,
       comments: 0,
       spoiler: _spoiler,
+      imageUrls: List.unmodifiable(_imageUrls),
     ),
   );
 }

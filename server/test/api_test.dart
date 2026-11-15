@@ -161,6 +161,7 @@ void main() {
           'rating': 5,
           'text': 'A spectacular cinematic experience.',
           'containsSpoiler': false,
+          'imageUrls': ['data:image/jpeg;base64,c2Nlbm9yYQ=='],
         },
       );
       expect(review.status, 201);
@@ -173,6 +174,11 @@ void main() {
       );
       expect(ownReviews.status, 200);
       expect((ownReviews.body['items'] as List<dynamic>).length, 1);
+      expect(
+        ((ownReviews.body['items'] as List<dynamic>).first
+            as Map<String, dynamic>)['imageUrls'],
+        ['data:image/jpeg;base64,c2Nlbm9yYQ=='],
+      );
       expect(
         ((ownReviews.body['items'] as List<dynamic>).first
             as Map<String, dynamic>)['userId'],

@@ -153,6 +153,59 @@ class UserAvatar extends StatelessWidget {
   }
 }
 
+class ReviewPhotoGallery extends StatelessWidget {
+  const ReviewPhotoGallery({super.key, required this.imageUrls});
+
+  final List<String> imageUrls;
+
+  @override
+  Widget build(BuildContext context) {
+    if (imageUrls.isEmpty) return const SizedBox.shrink();
+    return SizedBox(
+      height: imageUrls.length == 1 ? 230 : 170,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: imageUrls.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final value = imageUrls[index];
+          final fallback = Container(
+            width: 180,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: const Icon(Icons.broken_image_outlined),
+          );
+          Widget image = fallback;
+          if (value.startsWith('data:image/') && value.contains(',')) {
+            try {
+              image = Image.memory(
+                base64Decode(value.substring(value.indexOf(',') + 1)),
+                width: imageUrls.length == 1 ? 320 : 180,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => fallback,
+              );
+            } on FormatException {
+              image = fallback;
+            }
+          } else if (value.startsWith('http://') || value.startsWith('https://')) {
+            image = Image.network(
+              value,
+              width: imageUrls.length == 1 ? 320 : 180,
+              height: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => fallback,
+            );
+          }
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: image,
+          );
+        },
+      ),
+    );
+  }
+}
+
 class PosterArt extends StatelessWidget {
   const PosterArt({
     super.key,

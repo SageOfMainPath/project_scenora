@@ -235,6 +235,10 @@ class _ReviewCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(height: 1.35),
                 ),
+                if (review.imageUrls.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  ReviewPhotoGallery(imageUrls: review.imageUrls),
+                ],
                 if (review.reviewRatingCount > 0) ...[
                   const SizedBox(height: 8),
                   Text(

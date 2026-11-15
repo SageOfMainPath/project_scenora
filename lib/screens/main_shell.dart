@@ -255,6 +255,7 @@ class _MainShellState extends State<MainShell> {
           rating: review.rating,
           text: review.text,
           containsSpoiler: review.spoiler,
+          imageUrls: review.imageUrls,
         );
         if (!mounted) return;
         setState(() {

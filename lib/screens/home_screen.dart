@@ -698,6 +698,10 @@ class _ReviewCardState extends State<ReviewCard> {
               review.text,
               style: const TextStyle(height: 1.5, fontSize: 15),
             ),
+            if (review.imageUrls.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              ReviewPhotoGallery(imageUrls: review.imageUrls),
+            ],
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),

@@ -316,6 +316,7 @@ class ScenoraApiClient {
     required int rating,
     required String text,
     required bool containsSpoiler,
+    List<String> imageUrls = const [],
   }) async {
     if (movie.id == null) {
       throw const ApiException('This movie has no backend ID.');
@@ -329,6 +330,7 @@ class ScenoraApiClient {
         'rating': rating,
         'text': text,
         'containsSpoiler': containsSpoiler,
+        'imageUrls': imageUrls,
       },
     );
     return _review(result['review'] as Map<String, dynamic>);
@@ -592,6 +594,10 @@ class ScenoraApiClient {
           ? null
           : _asInt(json['viewerRating']),
       isFollowing: user['isFollowing'] == true,
+      imageUrls: (json['imageUrls'] as List<dynamic>? ?? const [])
+          .map((value) => '$value')
+          .where((value) => value.trim().isNotEmpty)
+          .toList(growable: false),
     );
   }
 
