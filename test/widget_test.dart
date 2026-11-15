@@ -21,6 +21,14 @@ void main() {
 
     expect(find.text('Premieres & launches'), findsOneWidget);
     expect(find.text('Dune: Part Two'), findsWidgets);
+    expect(
+      find.text('Live TMDB catalogue • auto-refreshes every 15 minutes'),
+      findsOneWidget,
+    );
+    expect(find.text('Directors Vault'), findsNothing);
+    expect(find.text('Pick a side'), findsNothing);
+    expect(find.text('Movie Release Schedule'), findsNothing);
+    expect(find.text('Join the conversation'), findsNothing);
   });
 
   testWidgets('requires login before a guest can publish a review', (

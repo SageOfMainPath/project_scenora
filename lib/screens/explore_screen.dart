@@ -48,7 +48,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
   List<Movie> _popularResults = const [];
   final Map<String, List<Movie>> _genreResults = {};
   Timer? _searchTimer;
+  Timer? _autoRefreshTimer;
   bool _searching = false;
+  bool _refreshing = false;
   bool _showSearch = false;
   String? _searchError;
   final Map<String, List<Movie>> _franchiseResults = {};
@@ -95,9 +97,25 @@ class _ExploreScreenState extends State<ExploreScreen> {
   @override
   void initState() {
     super.initState();
-    _loadPopular();
-    _loadDiscoverySections();
-    _loadFranchises();
+    unawaited(_refreshAll());
+    _autoRefreshTimer = Timer.periodic(
+      const Duration(minutes: 15),
+      (_) => unawaited(_refreshAll()),
+    );
+  }
+
+  Future<void> _refreshAll() async {
+    if (_refreshing) return;
+    _refreshing = true;
+    try {
+      await Future.wait([
+        _loadPopular(),
+        _loadDiscoverySections(),
+        _loadFranchises(),
+      ]);
+    } finally {
+      _refreshing = false;
+    }
   }
 
   Future<void> _loadFranchises() async {
@@ -153,6 +171,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   @override
   void dispose() {
     _searchTimer?.cancel();
+    _autoRefreshTimer?.cancel();
     super.dispose();
   }
 
@@ -217,363 +236,357 @@ class _ExploreScreenState extends State<ExploreScreen> {
         const SizedBox(width: 8),
       ],
     ),
-    body: CustomScrollView(
-      slivers: [
-        if (_showSearch)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-              child: TextField(
-                onChanged: _onSearchChanged,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.search_rounded),
-                  hintText: 'Search movies, series, people…',
-                  suffixIcon: Icon(Icons.tune_rounded),
-                ),
-              ),
-            ),
-          ),
-        if (_showSearch)
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 54,
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 8,
-                ),
-                scrollDirection: Axis.horizontal,
-                itemBuilder: (_, index) {
-                  final genre = [
-                    'All',
-                    'Drama',
-                    'Sci-Fi',
-                    'Action',
-                    'Comedy',
-                    'Romance',
-                  ][index];
-                  return ChoiceChip(
-                    label: Text(genre),
-                    selected: _genre == genre,
-                    showCheckmark: false,
-                    selectedColor: ScenoraTheme.crimson,
-                    labelStyle: TextStyle(
-                      color: _genre == genre ? Colors.white : null,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    onSelected: (_) => _selectGenre(genre),
-                  );
-                },
-                separatorBuilder: (_, _) => const SizedBox(width: 7),
-                itemCount: 6,
-              ),
-            ),
-          ),
-        if (_query.isNotEmpty || _genre != 'All') ...[
-          if (_searching)
-            const SliverToBoxAdapter(
-              child: LinearProgressIndicator(minHeight: 2),
-            ),
-          if (_searchError != null)
+    body: RefreshIndicator(
+      onRefresh: _refreshAll,
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          if (_showSearch)
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-                child: Text(
-                  _searchError!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                child: TextField(
+                  onChanged: _onSearchChanged,
+                  decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.search_rounded),
+                    hintText: 'Search movies, series, people…',
+                    suffixIcon: Icon(Icons.tune_rounded),
+                  ),
                 ),
               ),
             ),
-          const SliverToBoxAdapter(
-            child: SectionTitle(title: 'Search results'),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            sliver: SliverGrid.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: .58,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 14,
-              ),
-              itemCount: _results.length,
-              itemBuilder: (_, i) => _MovieTile(
-                movie: _results[i],
-                onTap: () => _open(_results[i]),
-              ),
-            ),
-          ),
-        ] else ...[
-          SliverToBoxAdapter(
-            child: _DiscoveryJumpBar(onSelected: _selectGenre),
-          ),
-          SliverToBoxAdapter(
-            child: _PremieresLaunches(movies: _popularMovies, onOpen: _open),
-          ),
-          SliverToBoxAdapter(
-            child: _DirectorsVault(movies: _popularMovies, onOpen: _open),
-          ),
-          SliverToBoxAdapter(
-            child: _FranchiseShowcase(
-              franchises: _franchiseResults,
-              fallback: _popularMovies,
-              onOpen: _open,
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: _PickASide(movies: _popularMovies.take(4).toList()),
-          ),
-          SliverToBoxAdapter(
-            child: _DiscoveryShelf(
-              title: 'Trending',
-              accent: 'Worldwide',
-              subtitle: 'Global audience favourites and high-heat releases',
-              icon: Icons.public_rounded,
-              movies: _popularMovies.take(15).toList(),
-              onOpen: _open,
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: _ReleaseSchedule(
-              movies: ([
-                ..._popularMovies,
-              ]..sort((a, b) => b.year.compareTo(a.year))).take(15).toList(),
-              onOpen: _open,
-            ),
-          ),
-          for (final streaming in [
-            (
-              'Worth Watching on',
-              'Prime',
-              Icons.live_tv_outlined,
-              _popularMovies.skip(1).take(15).toList(),
-            ),
-            (
-              'Don’t Miss These on',
-              'Netflix',
-              Icons.movie_filter_outlined,
-              _popularMovies.skip(3).take(15).toList(),
-            ),
-            (
-              'Don’t Miss These on',
-              'JioHotstar',
-              Icons.auto_awesome_rounded,
-              (_genreResults['Drama'] ?? _popularMovies).take(15).toList(),
-            ),
-            (
-              'Watch It With',
-              'District',
-              Icons.confirmation_number_outlined,
-              (_genreResults['Action'] ?? _popularMovies).take(15).toList(),
-            ),
-          ])
+          if (_showSearch)
             SliverToBoxAdapter(
-              child: _DiscoveryShelf(
-                title: streaming.$1,
-                accent: streaming.$2,
-                subtitle: 'Hand-picked titles • Rotates every day',
-                icon: streaming.$3,
-                movies: streaming.$4,
+              child: SizedBox(
+                height: 54,
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
+                  scrollDirection: Axis.horizontal,
+                  itemBuilder: (_, index) {
+                    final genre = [
+                      'All',
+                      'Drama',
+                      'Sci-Fi',
+                      'Action',
+                      'Comedy',
+                      'Romance',
+                    ][index];
+                    return ChoiceChip(
+                      label: Text(genre),
+                      selected: _genre == genre,
+                      showCheckmark: false,
+                      selectedColor: ScenoraTheme.crimson,
+                      labelStyle: TextStyle(
+                        color: _genre == genre ? Colors.white : null,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      onSelected: (_) => _selectGenre(genre),
+                    );
+                  },
+                  separatorBuilder: (_, _) => const SizedBox(width: 7),
+                  itemCount: 6,
+                ),
+              ),
+            ),
+          if (_query.isNotEmpty || _genre != 'All') ...[
+            if (_searching)
+              const SliverToBoxAdapter(
+                child: LinearProgressIndicator(minHeight: 2),
+              ),
+            if (_searchError != null)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                  child: Text(
+                    _searchError!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ),
+              ),
+            const SliverToBoxAdapter(
+              child: SectionTitle(title: 'Search results'),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              sliver: SliverGrid.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  childAspectRatio: .58,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 14,
+                ),
+                itemCount: _results.length,
+                itemBuilder: (_, i) => _MovieTile(
+                  movie: _results[i],
+                  onTap: () => _open(_results[i]),
+                ),
+              ),
+            ),
+          ] else ...[
+            SliverToBoxAdapter(
+              child: _DiscoveryJumpBar(onSelected: _selectGenre),
+            ),
+            const SliverToBoxAdapter(child: _TmdbLiveStatus()),
+            SliverToBoxAdapter(
+              child: _PremieresLaunches(movies: _popularMovies, onOpen: _open),
+            ),
+            SliverToBoxAdapter(
+              child: _FranchiseShowcase(
+                franchises: _franchiseResults,
+                fallback: _popularMovies,
                 onOpen: _open,
               ),
             ),
-          SliverToBoxAdapter(
-            child: _DiscoveryShelf(
-              title: 'Latest',
-              accent: 'Releases',
-              subtitle: 'Trending in theaters this week',
-              icon: Icons.new_releases_outlined,
-              movies: ([
-                ..._popularMovies,
-              ]..sort((a, b) => b.year.compareTo(a.year))).take(15).toList(),
-              onOpen: _open,
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: _DiscoveryShelf(
-              title: 'Trending',
-              accent: 'Now',
-              subtitle: 'What everyone is watching',
-              icon: Icons.local_fire_department_rounded,
-              movies: _popularMovies.take(15).toList(),
-              onOpen: _open,
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: _MovieCharts(movies: _popularMovies, onOpen: _open),
-          ),
-          const SliverToBoxAdapter(child: _CommunityInvite()),
-          SliverToBoxAdapter(child: _GenreBrowser(onSelected: _selectGenre)),
-          SliverToBoxAdapter(
-            child: _DiscoveryShelf(
-              title: 'Most Anticipated',
-              accent: 'Movies',
-              subtitle: 'The releases SCENORA members cannot wait for',
-              icon: Icons.hourglass_top_rounded,
-              movies: ([
-                ..._popularMovies,
-              ]..sort((a, b) => b.year.compareTo(a.year))).take(15).toList(),
-              onOpen: _open,
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: _DiscoveryShelf(
-              title: 'Top Rated',
-              accent: 'Masterpieces',
-              subtitle: 'Critically acclaimed',
-              icon: Icons.workspace_premium_outlined,
-              movies: ([
-                ..._popularMovies,
-              ]..sort((a, b) => b.score.compareTo(a.score))).take(15).toList(),
-              onOpen: _open,
-            ),
-          ),
-          for (final section in const [
-            (
-              'Action',
-              'Blockbusters',
-              'Big, loud and fast',
-              Icons.bolt_rounded,
-            ),
-            (
-              'Sci-Fi',
-              'Fantasy',
-              'Worlds beyond ours',
-              Icons.rocket_launch_outlined,
-            ),
-            (
-              'Drama',
-              'Stories',
-              'Stories that stay with you',
-              Icons.theater_comedy_outlined,
-            ),
-            (
-              'Comedy',
-              'Favourites',
-              'Easy laughs for movie night',
-              Icons.sentiment_very_satisfied_outlined,
-            ),
-          ])
             SliverToBoxAdapter(
               child: _DiscoveryShelf(
-                title: section.$1,
-                accent: section.$2,
-                subtitle: section.$3,
-                icon: section.$4,
-                movies: (_genreResults[section.$1] ?? const <Movie>[])
+                title: 'Trending',
+                accent: 'Worldwide',
+                subtitle: 'Global audience favourites and high-heat releases',
+                icon: Icons.public_rounded,
+                movies: _popularMovies.take(15).toList(),
+                onOpen: _open,
+              ),
+            ),
+            for (final streaming in [
+              (
+                'Worth Watching on',
+                'Prime',
+                Icons.live_tv_outlined,
+                _popularMovies.skip(1).take(15).toList(),
+              ),
+              (
+                'Don’t Miss These on',
+                'Netflix',
+                Icons.movie_filter_outlined,
+                _popularMovies.skip(3).take(15).toList(),
+              ),
+              (
+                'Don’t Miss These on',
+                'JioHotstar',
+                Icons.auto_awesome_rounded,
+                (_genreResults['Drama'] ?? _popularMovies).take(15).toList(),
+              ),
+              (
+                'Watch It With',
+                'District',
+                Icons.confirmation_number_outlined,
+                (_genreResults['Action'] ?? _popularMovies).take(15).toList(),
+              ),
+            ])
+              SliverToBoxAdapter(
+                child: _DiscoveryShelf(
+                  title: streaming.$1,
+                  accent: streaming.$2,
+                  subtitle: 'Fresh TMDB titles • updates automatically',
+                  icon: streaming.$3,
+                  movies: streaming.$4,
+                  onOpen: _open,
+                ),
+              ),
+            SliverToBoxAdapter(
+              child: _DiscoveryShelf(
+                title: 'Latest',
+                accent: 'Releases',
+                subtitle: 'Trending in theaters this week',
+                icon: Icons.new_releases_outlined,
+                movies: ([
+                  ..._popularMovies,
+                ]..sort((a, b) => b.year.compareTo(a.year))).take(15).toList(),
+                onOpen: _open,
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: _DiscoveryShelf(
+                title: 'Trending',
+                accent: 'Now',
+                subtitle: 'What everyone is watching',
+                icon: Icons.local_fire_department_rounded,
+                movies: _popularMovies.take(15).toList(),
+                onOpen: _open,
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: _MovieCharts(movies: _popularMovies, onOpen: _open),
+            ),
+            SliverToBoxAdapter(child: _GenreBrowser(onSelected: _selectGenre)),
+            SliverToBoxAdapter(
+              child: _DiscoveryShelf(
+                title: 'Most Anticipated',
+                accent: 'Movies',
+                subtitle: 'The releases SCENORA members cannot wait for',
+                icon: Icons.hourglass_top_rounded,
+                movies: ([
+                  ..._popularMovies,
+                ]..sort((a, b) => b.year.compareTo(a.year))).take(15).toList(),
+                onOpen: _open,
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: _DiscoveryShelf(
+                title: 'Top Rated',
+                accent: 'Masterpieces',
+                subtitle: 'Critically acclaimed',
+                icon: Icons.workspace_premium_outlined,
+                movies:
+                    ([..._popularMovies]
+                          ..sort((a, b) => b.score.compareTo(a.score)))
+                        .take(15)
+                        .toList(),
+                onOpen: _open,
+              ),
+            ),
+            for (final section in const [
+              (
+                'Action',
+                'Blockbusters',
+                'Big, loud and fast',
+                Icons.bolt_rounded,
+              ),
+              (
+                'Sci-Fi',
+                'Fantasy',
+                'Worlds beyond ours',
+                Icons.rocket_launch_outlined,
+              ),
+              (
+                'Drama',
+                'Stories',
+                'Stories that stay with you',
+                Icons.theater_comedy_outlined,
+              ),
+              (
+                'Comedy',
+                'Favourites',
+                'Easy laughs for movie night',
+                Icons.sentiment_very_satisfied_outlined,
+              ),
+            ])
+              SliverToBoxAdapter(
+                child: _DiscoveryShelf(
+                  title: section.$1,
+                  accent: section.$2,
+                  subtitle: section.$3,
+                  icon: section.$4,
+                  movies: (_genreResults[section.$1] ?? const <Movie>[])
+                      .take(15)
+                      .toList(),
+                  onOpen: _open,
+                ),
+              ),
+            SliverToBoxAdapter(
+              child: _DiscoveryShelf(
+                title: 'Popular',
+                accent: 'TV Series',
+                subtitle: 'Worth binging',
+                icon: Icons.tv_rounded,
+                movies: _popularMovies.reversed.take(15).toList(),
+                onOpen: _open,
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: _DiscoveryShelf(
+                title: 'Airing',
+                accent: 'Today',
+                subtitle: 'New episodes live',
+                icon: Icons.podcasts_rounded,
+                movies: (_genreResults['Drama'] ?? _popularMovies).reversed
                     .take(15)
                     .toList(),
                 onOpen: _open,
               ),
             ),
-          SliverToBoxAdapter(
-            child: _DiscoveryShelf(
-              title: 'Popular',
-              accent: 'TV Series',
-              subtitle: 'Worth binging',
-              icon: Icons.tv_rounded,
-              movies: _popularMovies.reversed.take(15).toList(),
-              onOpen: _open,
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: _DiscoveryShelf(
-              title: 'Airing',
-              accent: 'Today',
-              subtitle: 'New episodes live',
-              icon: Icons.podcasts_rounded,
-              movies: (_genreResults['Drama'] ?? _popularMovies).reversed
-                  .take(15)
-                  .toList(),
-              onOpen: _open,
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: _DiscoveryShelf(
-              title: 'Top Rated',
-              accent: 'TV Shows',
-              subtitle: 'The best of television',
-              icon: Icons.emoji_events_outlined,
-              movies:
-                  ([..._popularMovies]
-                        ..sort((a, b) => b.score.compareTo(a.score)))
-                      .reversed
-                      .take(15)
-                      .toList(),
-              onOpen: _open,
-            ),
-          ),
-          if (_query == '__legacy_discovery_layout__') ...[
-            const SliverToBoxAdapter(
-              child: SectionTitle(
-                title: 'Trending now',
-                subtitle: 'What everyone is watching',
+            SliverToBoxAdapter(
+              child: _DiscoveryShelf(
+                title: 'Top Rated',
+                accent: 'TV Shows',
+                subtitle: 'The best of television',
+                icon: Icons.emoji_events_outlined,
+                movies:
+                    ([..._popularMovies]
+                          ..sort((a, b) => b.score.compareTo(a.score)))
+                        .reversed
+                        .take(15)
+                        .toList(),
+                onOpen: _open,
               ),
             ),
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 240,
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _popularMovies.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 14),
-                  itemBuilder: (_, i) => _MovieTile(
-                    movie: _popularMovies[i],
-                    onTap: () => _open(_popularMovies[i]),
-                    width: 125,
+            if (_query == '__legacy_discovery_layout__') ...[
+              const SliverToBoxAdapter(
+                child: SectionTitle(
+                  title: 'Trending now',
+                  subtitle: 'What everyone is watching',
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 240,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _popularMovies.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 14),
+                    itemBuilder: (_, i) => _MovieTile(
+                      movie: _popularMovies[i],
+                      onTap: () => _open(_popularMovies[i]),
+                      width: 125,
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SliverToBoxAdapter(
-              child: SectionTitle(
-                title: 'Made for movie night',
-                subtitle: 'Highly rated by the community',
+              const SliverToBoxAdapter(
+                child: SectionTitle(
+                  title: 'Made for movie night',
+                  subtitle: 'Highly rated by the community',
+                ),
               ),
-            ),
-            SliverList.builder(
-              itemCount: 4,
-              itemBuilder: (_, i) {
-                final movie = _popularMovies[(i + 2) % _popularMovies.length];
-                return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 5,
-                  ),
-                  onTap: () => _open(movie),
-                  leading: PosterArt(
-                    movie: movie,
-                    width: 54,
-                    height: 74,
-                    radius: 9,
-                  ),
-                  title: Text(
-                    movie.title,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                  subtitle: Text(
-                    '${movie.year} · ${movie.genre}\n★ ${movie.score} TMDB',
-                  ),
-                  isThreeLine: true,
-                  trailing: IconButton(
-                    onPressed: () => widget.onToggleWatchlist(movie),
-                    icon: Icon(
-                      widget.watchlist.contains(movie)
-                          ? Icons.bookmark_rounded
-                          : Icons.bookmark_border_rounded,
-                      color: widget.watchlist.contains(movie)
-                          ? ScenoraTheme.crimson
-                          : null,
+              SliverList.builder(
+                itemCount: 4,
+                itemBuilder: (_, i) {
+                  final movie = _popularMovies[(i + 2) % _popularMovies.length];
+                  return ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 5,
                     ),
-                  ),
-                );
-              },
-            ),
+                    onTap: () => _open(movie),
+                    leading: PosterArt(
+                      movie: movie,
+                      width: 54,
+                      height: 74,
+                      radius: 9,
+                    ),
+                    title: Text(
+                      movie.title,
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    subtitle: Text(
+                      '${movie.year} · ${movie.genre}\n★ ${movie.score} TMDB',
+                    ),
+                    isThreeLine: true,
+                    trailing: IconButton(
+                      onPressed: () => widget.onToggleWatchlist(movie),
+                      icon: Icon(
+                        widget.watchlist.contains(movie)
+                            ? Icons.bookmark_rounded
+                            : Icons.bookmark_border_rounded,
+                        color: widget.watchlist.contains(movie)
+                            ? ScenoraTheme.crimson
+                            : null,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+            const SliverToBoxAdapter(child: SizedBox(height: 30)),
           ],
-          const SliverToBoxAdapter(child: SizedBox(height: 30)),
         ],
-      ],
+      ),
     ),
   );
 }
@@ -987,6 +1000,8 @@ class _PickASideState extends State<_PickASide> {
   }
 }
 
+// Kept only for backwards-compatible source history; no longer shown.
+// ignore: unused_element
 class _ReleaseSchedule extends StatelessWidget {
   const _ReleaseSchedule({required this.movies, required this.onOpen});
   final List<Movie> movies;
@@ -1130,6 +1145,8 @@ class _MovieChartsState extends State<_MovieCharts> {
   }
 }
 
+// Kept only for backwards-compatible source history; no longer shown.
+// ignore: unused_element
 class _CommunityInvite extends StatelessWidget {
   const _CommunityInvite();
 
@@ -1304,10 +1321,10 @@ class _DiscoveryJumpBar extends StatelessWidget {
       children: [
         for (final item in const [
           ('New releases', 'All'),
-          ('Directors', 'All'),
           ('Franchises', 'All'),
           ('For You', 'All'),
-          ('Daily Poll', 'All'),
+          ('Top rated', 'All'),
+          ('Genres', 'All'),
         ]) ...[
           ActionChip(
             label: Text(item.$1),
@@ -1316,6 +1333,32 @@ class _DiscoveryJumpBar extends StatelessWidget {
           ),
           const SizedBox(width: 7),
         ],
+      ],
+    ),
+  );
+}
+
+class _TmdbLiveStatus extends StatelessWidget {
+  const _TmdbLiveStatus();
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 5, 20, 0),
+    child: Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+            color: Color(0xFF35C990),
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          'Live TMDB catalogue • auto-refreshes every 15 minutes',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
       ],
     ),
   );
