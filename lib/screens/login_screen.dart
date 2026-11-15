@@ -22,49 +22,9 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
+  static const orange = Color(0xFFFF6A00);
   bool _loading = false;
-  bool _registerMode = false;
   String? _error;
-
-  @override
-  void dispose() {
-    _usernameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    final error = _registerMode
-        ? await widget.onRegister(
-            _usernameController.text.trim(),
-            _emailController.text.trim(),
-            _passwordController.text,
-          )
-        : await widget.onLogin(
-            _emailController.text.trim(),
-            _passwordController.text,
-          );
-    if (!mounted) return;
-    if (error == null) {
-      Navigator.pop(context, true);
-    } else {
-      setState(() {
-        _loading = false;
-        _error = error;
-      });
-    }
-  }
 
   Future<void> _googleLogin() async {
     setState(() {
@@ -85,218 +45,311 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      leading: IconButton(
-        tooltip: 'Continue as guest',
-        onPressed: () => Navigator.pop(context, false),
-        icon: const Icon(Icons.close_rounded),
-      ),
-    ),
-    body: SafeArea(
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 460),
-            child: Form(
-              key: _formKey,
+    backgroundColor: Colors.black,
+    body: Stack(
+      fit: StackFit.expand,
+      children: [
+        const _CinematicBackdrop(),
+        SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight:
+                    MediaQuery.sizeOf(context).height -
+                    MediaQuery.paddingOf(context).vertical -
+                    32,
+              ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Center(child: BrandMark()),
-                  const SizedBox(height: 38),
-                  Text(
-                    _registerMode ? 'Create your account' : 'Welcome back',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w900,
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: IconButton.filledTonal(
+                      tooltip: 'Continue as guest',
+                      onPressed: () => Navigator.pop(context, false),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.black.withValues(alpha: .48),
+                        foregroundColor: Colors.white,
+                      ),
+                      icon: const Icon(Icons.close_rounded),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 18),
+                  const ScenoraLogo(size: 82),
+                  const SizedBox(height: 18),
+                  const _Wordmark(),
+                  const SizedBox(height: 10),
+                  const _Tagline(),
+                  const SizedBox(height: 18),
                   Text(
-                    widget.reason,
+                    'Join a community of movie & series lovers.\nShare reviews, ratings and your passion.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      height: 1.45,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      color: Colors.white.withValues(alpha: .72),
+                      height: 1.5,
+                      fontSize: 14,
                     ),
                   ),
                   const SizedBox(height: 28),
-                  if (_registerMode) ...[
-                    TextFormField(
-                      controller: _usernameController,
-                      textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Username',
-                        prefixIcon: Icon(Icons.alternate_email_rounded),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xE6080B0A),
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: .18),
                       ),
-                      validator: (value) {
-                        if (!RegExp(
-                          r'^[a-zA-Z0-9_]{3,24}$',
-                        ).hasMatch(value?.trim() ?? '')) {
-                          return 'Use 3–24 letters, numbers, or underscores';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 14),
-                  ],
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    autofillHints: const [AutofillHints.email],
-                    decoration: const InputDecoration(
-                      labelText: 'Email address',
-                      prefixIcon: Icon(Icons.mail_outline_rounded),
-                    ),
-                    validator: (value) {
-                      final email = value?.trim() ?? '';
-                      if (email.isEmpty || !email.contains('@')) {
-                        return 'Enter a valid email address';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    autofillHints: const [AutofillHints.password],
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: const Icon(Icons.lock_outline_rounded),
-                      suffixIcon: IconButton(
-                        tooltip: _obscurePassword
-                            ? 'Show password'
-                            : 'Hide password',
-                        onPressed: () => setState(
-                          () => _obscurePassword = !_obscurePassword,
+                      boxShadow: [
+                        BoxShadow(
+                          color: orange.withValues(alpha: .17),
+                          blurRadius: 28,
+                          spreadRadius: -8,
                         ),
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                        ),
-                      ),
+                      ],
                     ),
-                    validator: (value) {
-                      if ((value ?? '').length < 8) {
-                        return 'Password must be at least 8 characters';
-                      }
-                      return null;
-                    },
-                    onFieldSubmitted: (_) => _submit(),
-                  ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Password reset will be connected to the backend.',
-                          ),
-                        ),
-                      ),
-                      child: const Text('Forgot password?'),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  if (_error != null) ...[
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.errorContainer,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        _error!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onErrorContainer,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  FilledButton(
-                    onPressed: _loading ? null : _submit,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      child: _loading
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Text(
-                              _registerMode ? 'Create account' : 'Log in',
-                              style: TextStyle(fontWeight: FontWeight.w800),
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Row(
-                    children: [
-                      const Expanded(child: Divider()),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text(
-                          'OR',
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Log in or sign up',
                           style: TextStyle(
-                            fontSize: 11,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
-                      ),
-                      const Expanded(child: Divider()),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  OutlinedButton.icon(
-                    onPressed: _loading ? null : _googleLogin,
-                    icon: const Icon(Icons.g_mobiledata_rounded, size: 28),
-                    label: const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Text('Continue with Google'),
+                        const SizedBox(height: 8),
+                        Text(
+                          widget.reason,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: .68),
+                            height: 1.45,
+                          ),
+                        ),
+                        if (_error != null) ...[
+                          const SizedBox(height: 18),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(13),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4A1111),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: Colors.redAccent.withValues(alpha: .55),
+                              ),
+                            ),
+                            child: Text(
+                              _error!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 22),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 58,
+                          child: FilledButton(
+                            onPressed: _loading ? null : _googleLogin,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: orange,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: orange.withValues(
+                                alpha: .45,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              elevation: 8,
+                              shadowColor: orange,
+                            ),
+                            child: _loading
+                                ? const SizedBox.square(
+                                    dimension: 23,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      _GoogleMark(),
+                                      SizedBox(width: 13),
+                                      Text(
+                                        'Continue with Google',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          'One tap creates a new account or signs you in.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: .52),
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        TextButton(
+                          onPressed: _loading
+                              ? null
+                              : () => Navigator.pop(context, false),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.white70,
+                          ),
+                          child: const Text('Continue browsing as guest'),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
-                    'Connected to the SCENORA backend. Your account and session are validated by the server.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 11,
-                      height: 1.4,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  TextButton(
-                    onPressed: _loading
-                        ? null
-                        : () => setState(() {
-                            _registerMode = !_registerMode;
-                            _error = null;
-                          }),
-                    child: Text(
-                      _registerMode
-                          ? 'Already have an account? Log in'
-                          : 'New to SCENORA? Create an account',
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: const Text('Continue browsing as guest'),
                   ),
                 ],
               ),
             ),
           ),
         ),
+      ],
+    ),
+  );
+}
+
+class _Wordmark extends StatelessWidget {
+  const _Wordmark();
+
+  @override
+  Widget build(BuildContext context) => const Text.rich(
+    TextSpan(
+      children: [
+        TextSpan(text: 'SC'),
+        TextSpan(
+          text: 'E',
+          style: TextStyle(color: _LoginScreenState.orange),
+        ),
+        TextSpan(text: 'NORA'),
+      ],
+    ),
+    style: TextStyle(
+      color: Colors.white,
+      fontSize: 38,
+      fontWeight: FontWeight.w900,
+      letterSpacing: 7,
+    ),
+  );
+}
+
+class _Tagline extends StatelessWidget {
+  const _Tagline();
+
+  @override
+  Widget build(BuildContext context) => const Text.rich(
+    TextSpan(
+      children: [
+        TextSpan(text: 'DISCOVER.  '),
+        TextSpan(
+          text: 'WATCH.',
+          style: TextStyle(color: _LoginScreenState.orange),
+        ),
+        TextSpan(text: '  SHARE.'),
+      ],
+    ),
+    textAlign: TextAlign.center,
+    style: TextStyle(
+      color: Colors.white,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 2.8,
+      fontSize: 12,
+    ),
+  );
+}
+
+class _GoogleMark extends StatelessWidget {
+  const _GoogleMark();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 28,
+    height: 28,
+    alignment: Alignment.center,
+    decoration: const BoxDecoration(
+      color: Colors.white,
+      shape: BoxShape.circle,
+    ),
+    child: const Text(
+      'G',
+      style: TextStyle(
+        color: Color(0xFF4285F4),
+        fontSize: 18,
+        fontWeight: FontWeight.w900,
+      ),
+    ),
+  );
+}
+
+class _CinematicBackdrop extends StatelessWidget {
+  const _CinematicBackdrop();
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFF17110D), Colors.black, Color(0xFF07110E)],
+      ),
+    ),
+    child: Stack(
+      children: [
+        const Positioned(
+          top: -80,
+          right: -90,
+          child: _Glow(color: _LoginScreenState.orange, size: 290),
+        ),
+        const Positioned(
+          bottom: 100,
+          left: -130,
+          child: _Glow(color: Color(0xFF8B2500), size: 330),
+        ),
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withValues(alpha: .26),
+                  Colors.black.withValues(alpha: .72),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _Glow extends StatelessWidget {
+  const _Glow({required this.color, required this.size});
+
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      gradient: RadialGradient(
+        colors: [color.withValues(alpha: .25), color.withValues(alpha: 0)],
       ),
     ),
   );

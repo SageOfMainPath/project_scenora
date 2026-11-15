@@ -7,7 +7,7 @@ void main() {
     await tester.pumpWidget(const ScenoraApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('SCENORA'), findsOneWidget);
+    expect(find.bySemanticsLabel('SCENORA logo'), findsWidgets);
     expect(find.text('For you'), findsOneWidget);
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('Explore'), findsOneWidget);
@@ -32,11 +32,14 @@ void main() {
     await tester.tap(find.widgetWithText(FloatingActionButton, 'Review'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Welcome back'), findsOneWidget);
+    expect(find.text('Log in or sign up'), findsOneWidget);
     expect(
       find.text('Log in to publish reviews and join the SCENORA community.'),
       findsOneWidget,
     );
     expect(find.text('Continue browsing as guest'), findsOneWidget);
+    expect(find.text('Continue with Google'), findsOneWidget);
+    expect(find.text('Email address'), findsNothing);
+    expect(find.text('Password'), findsNothing);
   });
 }

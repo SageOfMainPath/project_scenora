@@ -306,6 +306,21 @@ void main() {
       expect(publicUser.containsKey('passwordHash'), false);
     },
   );
+
+  test('review and session survive a backend store restart', () {
+    final reopened = JsonStore('${temporaryDirectory.path}/db.json');
+    final reviews = reopened.table('reviews');
+    final sessions = reopened.table('sessions');
+
+    expect(reviews, hasLength(1));
+    expect(reviews.single['text'], 'A spectacular cinematic experience.');
+    expect(sessions, isNotEmpty);
+    final authorId = reviews.single['userId'];
+    expect(
+      reopened.table('users').any((user) => user['id'] == authorId),
+      isTrue,
+    );
+  });
 }
 
 Future<ApiResponse> request(

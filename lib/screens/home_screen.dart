@@ -141,7 +141,9 @@ class _HomeScreenState extends State<HomeScreen> {
         : source;
     return Scaffold(
       appBar: AppBar(
-        title: const BrandMark(),
+        toolbarHeight: 72,
+        centerTitle: true,
+        title: const ScenoraLogo(size: 54),
         actions: [
           IconButton(
             tooltip: _showSearch ? 'Close review search' : 'Search reviews',

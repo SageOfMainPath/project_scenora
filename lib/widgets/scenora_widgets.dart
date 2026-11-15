@@ -39,6 +39,39 @@ class BrandMark extends StatelessWidget {
   );
 }
 
+class ScenoraLogo extends StatelessWidget {
+  const ScenoraLogo({super.key, this.size = 52});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: 'SCENORA logo',
+    image: true,
+    child: Container(
+      width: size,
+      height: size,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(size * .25),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: .3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Image.asset(
+        'assets/branding/scenora_logo.jpg',
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => const Icon(Icons.movie_creation_rounded),
+      ),
+    ),
+  );
+}
+
 class UserAvatar extends StatelessWidget {
   const UserAvatar({
     super.key,
