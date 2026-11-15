@@ -49,7 +49,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
   final Map<String, List<Movie>> _genreResults = {};
   Timer? _searchTimer;
   bool _searching = false;
+  bool _showSearch = false;
   String? _searchError;
+  final Map<String, List<Movie>> _franchiseResults = {};
 
   List<Movie> get _popularMovies =>
       _popularResults.isEmpty ? movies : _popularResults;
@@ -95,6 +97,27 @@ class _ExploreScreenState extends State<ExploreScreen> {
     super.initState();
     _loadPopular();
     _loadDiscoverySections();
+    _loadFranchises();
+  }
+
+  Future<void> _loadFranchises() async {
+    const searches = {
+      'Marvel / MCU': 'Avengers',
+      'Harry Potter': 'Harry Potter',
+      'DC Universe': 'Batman',
+      'Star Wars': 'Star Wars',
+      'Middle-earth': 'Lord of the Rings',
+    };
+    final results = await Future.wait(
+      searches.entries.map((entry) async {
+        try {
+          return MapEntry(entry.key, await widget.onSearch(entry.value));
+        } on Object {
+          return MapEntry(entry.key, const <Movie>[]);
+        }
+      }),
+    );
+    if (mounted) setState(() => _franchiseResults.addEntries(results));
   }
 
   Future<void> _loadDiscoverySections() async {
@@ -179,63 +202,73 @@ class _ExploreScreenState extends State<ExploreScreen> {
     appBar: AppBar(
       centerTitle: true,
       title: const ScenoraWordmark(width: 164, height: 46),
+      actions: [
+        IconButton(
+          tooltip: _showSearch ? 'Close search' : 'Search movies',
+          onPressed: () => setState(() {
+            _showSearch = !_showSearch;
+            if (!_showSearch) {
+              _query = '';
+              _remoteResults = const [];
+            }
+          }),
+          icon: Icon(_showSearch ? Icons.close_rounded : Icons.search_rounded),
+        ),
+        const SizedBox(width: 8),
+      ],
     ),
     body: CustomScrollView(
       slivers: [
-        const SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(20, 8, 20, 4),
-            child: Text(
-              'Explore',
-              style: TextStyle(fontSize: 27, fontWeight: FontWeight.w900),
-            ),
-          ),
-        ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-            child: TextField(
-              onChanged: _onSearchChanged,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search_rounded),
-                hintText: 'Search movies, series, people…',
-                suffixIcon: Icon(Icons.tune_rounded),
+        if (_showSearch)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+              child: TextField(
+                onChanged: _onSearchChanged,
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.search_rounded),
+                  hintText: 'Search movies, series, people…',
+                  suffixIcon: Icon(Icons.tune_rounded),
+                ),
               ),
             ),
           ),
-        ),
-        SliverToBoxAdapter(
-          child: SizedBox(
-            height: 54,
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              scrollDirection: Axis.horizontal,
-              itemBuilder: (_, index) {
-                final genre = [
-                  'All',
-                  'Drama',
-                  'Sci-Fi',
-                  'Action',
-                  'Comedy',
-                  'Romance',
-                ][index];
-                return ChoiceChip(
-                  label: Text(genre),
-                  selected: _genre == genre,
-                  showCheckmark: false,
-                  selectedColor: ScenoraTheme.crimson,
-                  labelStyle: TextStyle(
-                    color: _genre == genre ? Colors.white : null,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  onSelected: (_) => _selectGenre(genre),
-                );
-              },
-              separatorBuilder: (_, _) => const SizedBox(width: 7),
-              itemCount: 6,
+        if (_showSearch)
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: 54,
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
+                scrollDirection: Axis.horizontal,
+                itemBuilder: (_, index) {
+                  final genre = [
+                    'All',
+                    'Drama',
+                    'Sci-Fi',
+                    'Action',
+                    'Comedy',
+                    'Romance',
+                  ][index];
+                  return ChoiceChip(
+                    label: Text(genre),
+                    selected: _genre == genre,
+                    showCheckmark: false,
+                    selectedColor: ScenoraTheme.crimson,
+                    labelStyle: TextStyle(
+                      color: _genre == genre ? Colors.white : null,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    onSelected: (_) => _selectGenre(genre),
+                  );
+                },
+                separatorBuilder: (_, _) => const SizedBox(width: 7),
+                itemCount: 6,
+              ),
             ),
           ),
-        ),
         if (_query.isNotEmpty || _genre != 'All') ...[
           if (_searching)
             const SliverToBoxAdapter(
@@ -274,13 +307,74 @@ class _ExploreScreenState extends State<ExploreScreen> {
           SliverToBoxAdapter(
             child: _DiscoveryJumpBar(onSelected: _selectGenre),
           ),
-          if (_popularMovies.isNotEmpty)
+          SliverToBoxAdapter(
+            child: _PremieresLaunches(movies: _popularMovies, onOpen: _open),
+          ),
+          SliverToBoxAdapter(
+            child: _DirectorsVault(movies: _popularMovies, onOpen: _open),
+          ),
+          SliverToBoxAdapter(
+            child: _FranchiseShowcase(
+              franchises: _franchiseResults,
+              fallback: _popularMovies,
+              onOpen: _open,
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: _PickASide(movies: _popularMovies.take(4).toList()),
+          ),
+          SliverToBoxAdapter(
+            child: _DiscoveryShelf(
+              title: 'Trending',
+              accent: 'Worldwide',
+              subtitle: 'Global audience favourites and high-heat releases',
+              icon: Icons.public_rounded,
+              movies: _popularMovies.take(15).toList(),
+              onOpen: _open,
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: _ReleaseSchedule(
+              movies: ([
+                ..._popularMovies,
+              ]..sort((a, b) => b.year.compareTo(a.year))).take(15).toList(),
+              onOpen: _open,
+            ),
+          ),
+          for (final streaming in [
+            (
+              'Worth Watching on',
+              'Prime',
+              Icons.live_tv_outlined,
+              _popularMovies.skip(1).take(15).toList(),
+            ),
+            (
+              'Don’t Miss These on',
+              'Netflix',
+              Icons.movie_filter_outlined,
+              _popularMovies.skip(3).take(15).toList(),
+            ),
+            (
+              'Don’t Miss These on',
+              'JioHotstar',
+              Icons.auto_awesome_rounded,
+              (_genreResults['Drama'] ?? _popularMovies).take(15).toList(),
+            ),
+            (
+              'Watch It With',
+              'District',
+              Icons.confirmation_number_outlined,
+              (_genreResults['Action'] ?? _popularMovies).take(15).toList(),
+            ),
+          ])
             SliverToBoxAdapter(
-              child: _FeaturedMovie(
-                movie: _popularMovies.first,
-                saved: widget.watchlist.contains(_popularMovies.first),
-                onOpen: () => _open(_popularMovies.first),
-                onSave: () => widget.onToggleWatchlist(_popularMovies.first),
+              child: _DiscoveryShelf(
+                title: streaming.$1,
+                accent: streaming.$2,
+                subtitle: 'Hand-picked titles • Rotates every day',
+                icon: streaming.$3,
+                movies: streaming.$4,
+                onOpen: _open,
               ),
             ),
           SliverToBoxAdapter(
@@ -306,9 +400,20 @@ class _ExploreScreenState extends State<ExploreScreen> {
             ),
           ),
           SliverToBoxAdapter(
-            child: _DailyMoviePoll(
-              left: _popularMovies.isEmpty ? null : _popularMovies.first,
-              right: _popularMovies.length < 2 ? null : _popularMovies[1],
+            child: _MovieCharts(movies: _popularMovies, onOpen: _open),
+          ),
+          const SliverToBoxAdapter(child: _CommunityInvite()),
+          SliverToBoxAdapter(child: _GenreBrowser(onSelected: _selectGenre)),
+          SliverToBoxAdapter(
+            child: _DiscoveryShelf(
+              title: 'Most Anticipated',
+              accent: 'Movies',
+              subtitle: 'The releases SCENORA members cannot wait for',
+              icon: Icons.hourglass_top_rounded,
+              movies: ([
+                ..._popularMovies,
+              ]..sort((a, b) => b.year.compareTo(a.year))).take(15).toList(),
+              onOpen: _open,
             ),
           ),
           SliverToBoxAdapter(
@@ -361,6 +466,43 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 onOpen: _open,
               ),
             ),
+          SliverToBoxAdapter(
+            child: _DiscoveryShelf(
+              title: 'Popular',
+              accent: 'TV Series',
+              subtitle: 'Worth binging',
+              icon: Icons.tv_rounded,
+              movies: _popularMovies.reversed.take(15).toList(),
+              onOpen: _open,
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: _DiscoveryShelf(
+              title: 'Airing',
+              accent: 'Today',
+              subtitle: 'New episodes live',
+              icon: Icons.podcasts_rounded,
+              movies: (_genreResults['Drama'] ?? _popularMovies).reversed
+                  .take(15)
+                  .toList(),
+              onOpen: _open,
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: _DiscoveryShelf(
+              title: 'Top Rated',
+              accent: 'TV Shows',
+              subtitle: 'The best of television',
+              icon: Icons.emoji_events_outlined,
+              movies:
+                  ([..._popularMovies]
+                        ..sort((a, b) => b.score.compareTo(a.score)))
+                      .reversed
+                      .take(15)
+                      .toList(),
+              onOpen: _open,
+            ),
+          ),
           if (_query == '__legacy_discovery_layout__') ...[
             const SliverToBoxAdapter(
               child: SectionTitle(
@@ -436,6 +578,656 @@ class _ExploreScreenState extends State<ExploreScreen> {
   );
 }
 
+class _PremieresLaunches extends StatefulWidget {
+  const _PremieresLaunches({required this.movies, required this.onOpen});
+  final List<Movie> movies;
+  final ValueChanged<Movie> onOpen;
+
+  @override
+  State<_PremieresLaunches> createState() => _PremieresLaunchesState();
+}
+
+class _PremieresLaunchesState extends State<_PremieresLaunches> {
+  String _filter = 'All';
+
+  @override
+  Widget build(BuildContext context) {
+    final items = switch (_filter) {
+      'Upcoming' => ([
+        ...widget.movies,
+      ]..sort((a, b) => b.year.compareTo(a.year))),
+      'Trailers' => widget.movies.reversed.toList(),
+      'Bollywood' => widget.movies.skip(2).toList(),
+      'Hollywood' => widget.movies.skip(4).toList(),
+      _ => widget.movies,
+    };
+    return Padding(
+      padding: const EdgeInsets.only(top: 22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _DiscoveryHeading(
+            icon: Icons.rocket_launch_outlined,
+            title: 'Premieres & launches',
+            subtitle: 'Released recently or arriving in the next two months',
+          ),
+          SizedBox(
+            height: 46,
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+              scrollDirection: Axis.horizontal,
+              itemCount: 5,
+              separatorBuilder: (_, _) => const SizedBox(width: 7),
+              itemBuilder: (_, index) {
+                final label = const [
+                  'All',
+                  'Upcoming',
+                  'Trailers',
+                  'Bollywood',
+                  'Hollywood',
+                ][index];
+                return ChoiceChip(
+                  label: Text(label),
+                  selected: _filter == label,
+                  onSelected: (_) => setState(() => _filter = label),
+                );
+              },
+            ),
+          ),
+          SizedBox(
+            height: 238,
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              scrollDirection: Axis.horizontal,
+              itemCount: items.take(15).length,
+              separatorBuilder: (_, _) => const SizedBox(width: 12),
+              itemBuilder: (_, index) => Stack(
+                children: [
+                  _MovieTile(
+                    movie: items[index],
+                    width: 126,
+                    onTap: () => widget.onOpen(items[index]),
+                  ),
+                  Positioned(
+                    left: 6,
+                    top: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black87,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        index.isEven ? '● New movie' : '● Teaser',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DirectorsVault extends StatefulWidget {
+  const _DirectorsVault({required this.movies, required this.onOpen});
+  final List<Movie> movies;
+  final ValueChanged<Movie> onOpen;
+
+  @override
+  State<_DirectorsVault> createState() => _DirectorsVaultState();
+}
+
+class _DirectorsVaultState extends State<_DirectorsVault> {
+  int _selected = 0;
+  static const _directors = [
+    'Denis Villeneuve',
+    'David Fincher',
+    'Steven Spielberg',
+    'Christopher Nolan',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.movies.isEmpty) return const SizedBox.shrink();
+    final offset = (_selected * 3) % widget.movies.length;
+    final films = [
+      ...widget.movies.skip(offset),
+      ...widget.movies.take(offset),
+    ].take(5).toList();
+    return Padding(
+      padding: const EdgeInsets.only(top: 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _DiscoveryHeading(
+            icon: Icons.movie_filter_outlined,
+            title: 'Directors Vault',
+            subtitle: 'Visionary auteurs, signature filmographies',
+          ),
+          SizedBox(
+            height: 44,
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+              scrollDirection: Axis.horizontal,
+              itemCount: _directors.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 7),
+              itemBuilder: (_, index) => ChoiceChip(
+                label: Text(_directors[index]),
+                selected: _selected == index,
+                onSelected: (_) => setState(() => _selected = index),
+              ),
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF180C11),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: ScenoraTheme.gold.withValues(alpha: .18),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: ScenoraTheme.gold,
+                      child: Text(
+                        _directors[_selected][0],
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _directors[_selected],
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        Text(
+                          '${films.length}+ essential films',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  height: 205,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: films.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 10),
+                    itemBuilder: (_, index) => _MovieTile(
+                      movie: films[index],
+                      width: 112,
+                      onTap: () => widget.onOpen(films[index]),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FranchiseShowcase extends StatefulWidget {
+  const _FranchiseShowcase({
+    required this.franchises,
+    required this.fallback,
+    required this.onOpen,
+  });
+  final Map<String, List<Movie>> franchises;
+  final List<Movie> fallback;
+  final ValueChanged<Movie> onOpen;
+
+  @override
+  State<_FranchiseShowcase> createState() => _FranchiseShowcaseState();
+}
+
+class _FranchiseShowcaseState extends State<_FranchiseShowcase> {
+  String _selected = 'Marvel / MCU';
+
+  @override
+  Widget build(BuildContext context) {
+    final items = widget.franchises[_selected] ?? widget.fallback;
+    return Padding(
+      padding: const EdgeInsets.only(top: 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _DiscoveryHeading(
+            icon: Icons.hub_outlined,
+            title: 'Franchises & sagas',
+            subtitle: 'Cinema’s biggest universes and timeless worlds',
+          ),
+          SizedBox(
+            height: 44,
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+              scrollDirection: Axis.horizontal,
+              itemCount: 5,
+              separatorBuilder: (_, _) => const SizedBox(width: 7),
+              itemBuilder: (_, index) {
+                final name = const [
+                  'Marvel / MCU',
+                  'Harry Potter',
+                  'DC Universe',
+                  'Star Wars',
+                  'Middle-earth',
+                ][index];
+                return ChoiceChip(
+                  label: Text(name),
+                  selected: _selected == name,
+                  onSelected: (_) => setState(() => _selected = name),
+                );
+              },
+            ),
+          ),
+          SizedBox(
+            height: 238,
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              scrollDirection: Axis.horizontal,
+              itemCount: items.take(15).length,
+              separatorBuilder: (_, _) => const SizedBox(width: 12),
+              itemBuilder: (_, index) => _MovieTile(
+                movie: items[index],
+                width: 126,
+                onTap: () => widget.onOpen(items[index]),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PickASide extends StatefulWidget {
+  const _PickASide({required this.movies});
+  final List<Movie> movies;
+
+  @override
+  State<_PickASide> createState() => _PickASideState();
+}
+
+class _PickASideState extends State<_PickASide> {
+  String? _vote;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.movies.length < 2) return const SizedBox.shrink();
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 28, 16, 4),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF170D12), Color(0xFF0B0B0F)],
+        ),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Pick a side',
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'New matchup today • ${_vote == null ? 0 : 1}/${widget.movies.length} voted',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Which movie owns movie night?',
+            style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 12),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: widget.movies.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: .72,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+            ),
+            itemBuilder: (_, index) {
+              final movie = widget.movies[index];
+              final selected = _vote == movie.id;
+              return InkWell(
+                onTap: () => setState(() => _vote = movie.id),
+                borderRadius: BorderRadius.circular(15),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(
+                      color: selected ? ScenoraTheme.gold : Colors.white12,
+                      width: selected ? 2 : 1,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: PosterArt(
+                          movie: movie,
+                          width: 160,
+                          height: 190,
+                          radius: 11,
+                          hero: false,
+                        ),
+                      ),
+                      const SizedBox(height: 7),
+                      Text(
+                        movie.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      Text(
+                        selected ? 'Voted' : 'Vote',
+                        style: TextStyle(
+                          color: selected ? ScenoraTheme.gold : null,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReleaseSchedule extends StatelessWidget {
+  const _ReleaseSchedule({required this.movies, required this.onOpen});
+  final List<Movie> movies;
+  final ValueChanged<Movie> onOpen;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: 24),
+    child: Column(
+      children: [
+        const _DiscoveryHeading(
+          icon: Icons.calendar_month_outlined,
+          title: 'Movie Release Schedule',
+          subtitle: 'Theatrical premieres and streaming release calendar',
+        ),
+        SizedBox(
+          height: 238,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            scrollDirection: Axis.horizontal,
+            itemCount: movies.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 12),
+            itemBuilder: (_, index) => Stack(
+              children: [
+                _MovieTile(
+                  movie: movies[index],
+                  width: 126,
+                  onTap: () => onOpen(movies[index]),
+                ),
+                Positioned(
+                  top: 6,
+                  left: 6,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black87,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'NOV ${16 + index}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _MovieCharts extends StatefulWidget {
+  const _MovieCharts({required this.movies, required this.onOpen});
+  final List<Movie> movies;
+  final ValueChanged<Movie> onOpen;
+
+  @override
+  State<_MovieCharts> createState() => _MovieChartsState();
+}
+
+class _MovieChartsState extends State<_MovieCharts> {
+  int _tab = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final ranked = [...widget.movies]
+      ..sort(
+        (a, b) =>
+            _tab >= 2 ? b.score.compareTo(a.score) : b.year.compareTo(a.year),
+      );
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 26, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Charts',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 42,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: 4,
+              separatorBuilder: (_, _) => const SizedBox(width: 7),
+              itemBuilder: (_, index) {
+                final label = const [
+                  'Top movies',
+                  'Trending shows',
+                  'Top rated TV',
+                  'Hidden gems',
+                ][index];
+                return ChoiceChip(
+                  label: Text(label),
+                  selected: _tab == index,
+                  onSelected: (_) => setState(() => _tab = index),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+          for (var index = 0; index < ranked.take(5).length; index++)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              onTap: () => widget.onOpen(ranked[index]),
+              leading: Text(
+                '${index + 1}',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: ScenoraTheme.gold,
+                ),
+              ),
+              title: Text(
+                ranked[index].title,
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+              subtitle: Text(
+                '${ranked[index].year}  •  ★ ${ranked[index].score.toStringAsFixed(1)}',
+              ),
+              trailing: PosterArt(
+                movie: ranked[index],
+                width: 36,
+                height: 50,
+                radius: 7,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CommunityInvite extends StatelessWidget {
+  const _CommunityInvite();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surfaceContainer,
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Join the conversation',
+          style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
+        ),
+        SizedBox(height: 4),
+        Text('See what cinephiles are saying, and add your own take.'),
+        SizedBox(height: 12),
+        Row(
+          children: [
+            Icon(Icons.forum_outlined),
+            SizedBox(width: 8),
+            Text(
+              'Use Shoutbox or publish a review',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+class _GenreBrowser extends StatelessWidget {
+  const _GenreBrowser({required this.onSelected});
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 26, 20, 0),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Browse by genre',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 7,
+          runSpacing: 7,
+          children: [
+            for (final genre in const [
+              'Action',
+              'Sci-Fi',
+              'Comedy',
+              'Drama',
+              'Romance',
+            ])
+              ActionChip(
+                label: Text(genre),
+                onPressed: () => onSelected(genre),
+              ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+class _DiscoveryHeading extends StatelessWidget {
+  const _DiscoveryHeading({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: ScenoraTheme.gold, size: 21),
+        const SizedBox(width: 9),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 class _DiscoveryJumpBar extends StatelessWidget {
   const _DiscoveryJumpBar({required this.onSelected});
   final ValueChanged<String> onSelected;
@@ -449,11 +1241,10 @@ class _DiscoveryJumpBar extends StatelessWidget {
       children: [
         for (final item in const [
           ('New releases', 'All'),
-          ('Top rated', 'All'),
-          ('Action', 'Action'),
-          ('Sci-Fi', 'Sci-Fi'),
-          ('Drama', 'Drama'),
-          ('Comedy', 'Comedy'),
+          ('Directors', 'All'),
+          ('Franchises', 'All'),
+          ('For You', 'All'),
+          ('Daily Poll', 'All'),
         ]) ...[
           ActionChip(
             label: Text(item.$1),
@@ -467,6 +1258,8 @@ class _DiscoveryJumpBar extends StatelessWidget {
   );
 }
 
+// Kept as an alternate compact hero for future tablet layouts.
+// ignore: unused_element
 class _FeaturedMovie extends StatelessWidget {
   const _FeaturedMovie({
     required this.movie,
@@ -740,8 +1533,8 @@ class _MovieTile extends StatelessWidget {
           Expanded(
             child: PosterArt(
               movie: movie,
-              width: width ?? double.infinity,
-              height: double.infinity,
+              width: width ?? 112,
+              height: 180,
               radius: 14,
               hero: false,
             ),

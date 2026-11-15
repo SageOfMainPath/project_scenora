@@ -83,7 +83,7 @@ class ScenoraApi {
   Response _health(Request request) => _ok({
     'status': 'ok',
     'service': 'scenora-backend',
-    'version': '1.13.0',
+    'version': '1.14.0',
     'database': store.persistence,
     'time': DateTime.now().toUtc().toIso8601String(),
   });
