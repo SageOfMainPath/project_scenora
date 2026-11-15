@@ -580,6 +580,7 @@ class _MainShellState extends State<MainShell> {
         getComments: _getComments,
         onRefresh: _refreshAll,
         onOpenMessages: () => setState(() => _index = 2),
+        loadTopMovies: _api.popularMovies,
       ),
       ExploreScreen(
         reviews: _reviews,

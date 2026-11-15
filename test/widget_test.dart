@@ -19,7 +19,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.explore_outlined));
     await tester.pumpAndSettle();
 
-    expect(find.text('Trending now'), findsOneWidget);
+    expect(find.text('FEATURED THIS WEEK'), findsOneWidget);
     expect(find.text('Dune: Part Two'), findsWidgets);
   });
 

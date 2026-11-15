@@ -28,6 +28,7 @@ class HomeScreen extends StatefulWidget {
     required this.getComments,
     required this.onRefresh,
     required this.onOpenMessages,
+    required this.loadTopMovies,
   });
   final List<Review> reviews;
   final String currentUserId;
@@ -57,6 +58,7 @@ class HomeScreen extends StatefulWidget {
   final Future<List<Map<String, dynamic>>> Function(Review review) getComments;
   final Future<void> Function() onRefresh;
   final VoidCallback onOpenMessages;
+  final Future<List<Movie>> Function() loadTopMovies;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -71,6 +73,29 @@ class _HomeScreenState extends State<HomeScreen> {
   final _searchController = TextEditingController();
   final List<Review> _searchResults = [];
   Timer? _searchTimer;
+  List<Movie> _topMovies = const [];
+  bool _loadingTopMovies = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTopRatedMovies();
+  }
+
+  Future<void> _loadTopRatedMovies() async {
+    try {
+      final movies = await widget.loadTopMovies();
+      final ranked = [...movies]..sort((a, b) => b.score.compareTo(a.score));
+      if (mounted) {
+        setState(() {
+          _topMovies = ranked.take(15).toList(growable: false);
+          _loadingTopMovies = false;
+        });
+      }
+    } on Object {
+      if (mounted) setState(() => _loadingTopMovies = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -206,6 +231,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
+            if (!_showSearch)
+              SliverToBoxAdapter(
+                child: _TopRatedStories(
+                  movies: _topMovies,
+                  loading: _loadingTopMovies,
+                  onTap: _openMovie,
+                ),
+              ),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 14),
@@ -287,6 +320,145 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+}
+
+class _TopRatedStories extends StatelessWidget {
+  const _TopRatedStories({
+    required this.movies,
+    required this.loading,
+    required this.onTap,
+  });
+
+  final List<Movie> movies;
+  final bool loading;
+  final ValueChanged<Movie> onTap;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.local_fire_department_rounded,
+                color: ScenoraTheme.gold,
+              ),
+              const SizedBox(width: 7),
+              const Text(
+                'Top rated movies',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+              ),
+              const Spacer(),
+              Text('TOP 15', style: Theme.of(context).textTheme.labelSmall),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 116,
+          child: loading
+              ? const Center(child: CircularProgressIndicator())
+              : ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: movies.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 12),
+                  itemBuilder: (_, index) {
+                    final movie = movies[index];
+                    return InkWell(
+                      onTap: () => onTap(movie),
+                      borderRadius: BorderRadius.circular(40),
+                      child: SizedBox(
+                        width: 76,
+                        child: Column(
+                          children: [
+                            Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(3),
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        ScenoraTheme.gold,
+                                        ScenoraTheme.crimson,
+                                      ],
+                                    ),
+                                  ),
+                                  child: ClipOval(
+                                    child: PosterArt(
+                                      movie: movie,
+                                      width: 66,
+                                      height: 66,
+                                      radius: 33,
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  left: -2,
+                                  bottom: -2,
+                                  child: CircleAvatar(
+                                    radius: 11,
+                                    backgroundColor: ScenoraTheme.crimson,
+                                    child: Text(
+                                      '${index + 1}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  right: -2,
+                                  bottom: -2,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 5,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black87,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      movie.score.toStringAsFixed(1),
+                                      style: const TextStyle(
+                                        color: ScenoraTheme.gold,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 7),
+                            Text(
+                              movie.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _FeedPill extends StatelessWidget {
