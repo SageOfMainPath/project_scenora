@@ -83,29 +83,32 @@ class ProfileScreen extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 30),
         children: [
           if (!isLoggedIn) _guestBanner(context),
-          Container(
-            margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFF6D28D9).withValues(alpha: .85),
-                  const Color(0xFF24102E).withValues(alpha: .72),
-                ],
-              ),
-            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                UserAvatar(
-                  name: displayName,
-                  color: const Color(0xFF5F6BEA),
-                  radius: 46,
-                  imageUrl: '${user?['avatarUrl'] ?? ''}',
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    UserAvatar(
+                      name: displayName,
+                      color: const Color(0xFF5F6BEA),
+                      radius: 48,
+                      imageUrl: '${user?['avatarUrl'] ?? ''}',
+                    ),
+                    const Spacer(),
+                    _Stat(
+                      value: '${user?['reviewCount'] ?? ownReviews.length}',
+                      label: 'Reviews\nposted',
+                    ),
+                    _Stat(
+                      value: '${effectiveWatchlist.length}',
+                      label: 'Saved\nmovies',
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 13),
+                const SizedBox(height: 15),
                 Text(
                   displayName,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -119,65 +122,73 @@ class ProfileScreen extends StatelessWidget {
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
-                if (bio.isNotEmpty || location.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  Text(
-                    [
-                      bio,
-                      location,
-                    ].where((value) => value.isNotEmpty).join('\n'),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-                if (joined != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    'Joined ${_monthName(joined.month)} ${joined.year}',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
                 const SizedBox(height: 18),
+                Text(
+                  bio.isEmpty ? 'Building my movie profile on SCENORA.' : bio,
+                  style: const TextStyle(fontSize: 16, height: 1.35),
+                ),
+                if (location.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  _ProfileInfoLine(
+                    icon: Icons.location_on_outlined,
+                    label: location,
+                  ),
+                ],
+                const SizedBox(height: 13),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _Stat(
-                      value: '${user?['reviewCount'] ?? ownReviews.length}',
-                      label: 'Reviews',
+                    Expanded(
+                      child: _ProfileInfoLine(
+                        icon: Icons.group_outlined,
+                        label: '${user?['followerCount'] ?? 0} Followers',
+                        onTap: isLoggedIn ? onFollowersTap : null,
+                      ),
                     ),
-                    _Stat(
-                      value: '${user?['followerCount'] ?? 0}',
-                      label: 'Followers',
-                      onTap: isLoggedIn ? onFollowersTap : null,
-                    ),
-                    _Stat(
-                      value: '${user?['followingCount'] ?? 0}',
-                      label: 'Following',
-                      onTap: isLoggedIn ? onFollowingTap : null,
-                    ),
-                    _Stat(
-                      value: '${effectiveWatchlist.length}',
-                      label: 'Saved',
+                    TextButton(
+                      onPressed: isLoggedIn ? onFollowingTap : null,
+                      child: Text('${user?['followingCount'] ?? 0} Following'),
                     ),
                   ],
                 ),
+                if (joined != null) ...[
+                  const SizedBox(height: 8),
+                  _ProfileInfoLine(
+                    icon: Icons.calendar_month_outlined,
+                    label: 'Joined ${_monthName(joined.month)} ${joined.year}',
+                  ),
+                ],
                 if (isLoggedIn) ...[
                   const SizedBox(height: 18),
                   SizedBox(
                     width: double.infinity,
-                    child: OutlinedButton.icon(
+                    height: 50,
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFFA43BFF),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
                       onPressed: () => _showProfileEditor(context),
                       icon: const Icon(Icons.edit_outlined),
-                      label: const Text('Edit profile'),
+                      label: const Text(
+                        'Edit profile',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
                     ),
                   ),
                 ],
               ],
             ),
           ),
-          const SectionTitle(title: 'Interested in'),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 27, 20, 12),
+            child: Text(
+              'Interested In',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+            ),
+          ),
           if (effectiveWatchlist.isEmpty)
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -185,7 +196,7 @@ class ProfileScreen extends StatelessWidget {
             )
           else
             SizedBox(
-              height: 195,
+              height: 112,
               child: ListView.separated(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 scrollDirection: Axis.horizontal,
@@ -193,33 +204,14 @@ class ProfileScreen extends StatelessWidget {
                 separatorBuilder: (_, _) => const SizedBox(width: 12),
                 itemBuilder: (_, index) {
                   final movie = effectiveWatchlist.elementAt(index);
-                  return InkWell(
+                  return _InterestMovieCard(
+                    movie: movie,
                     onTap: () => onMovieTap(movie),
-                    child: SizedBox(
-                      width: 108,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          PosterArt(
-                            movie: movie,
-                            width: 108,
-                            height: 156,
-                            radius: 13,
-                          ),
-                          const SizedBox(height: 7),
-                          Text(
-                            movie.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.w800),
-                          ),
-                        ],
-                      ),
-                    ),
                   );
                 },
               ),
             ),
+          const _ProfileContentTabs(),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 28, 12, 8),
             child: Row(
@@ -254,60 +246,105 @@ class ProfileScreen extends StatelessWidget {
               ),
             )
           else
-            ...sortedReviews.map((review) => _profileReviewCard(context, review)),
+            ...sortedReviews.map(
+              (review) => _profileReviewCard(context, review),
+            ),
         ],
       ),
     );
   }
 
   String _monthName(int month) => const [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ][month - 1];
 
-  Widget _profileReviewCard(BuildContext context, Review review) => Card(
-    margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+  Widget _profileReviewCard(BuildContext context, Review review) => Container(
+    margin: const EdgeInsets.symmetric(horizontal: 20),
+    padding: const EdgeInsets.symmetric(vertical: 14),
+    decoration: BoxDecoration(
+      border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
+    ),
     child: InkWell(
       onTap: () => onMovieTap(review.movie),
-      borderRadius: BorderRadius.circular(18),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      borderRadius: BorderRadius.circular(12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          PosterArt(movie: review.movie, width: 88, height: 124, radius: 10),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                PosterArt(movie: review.movie, width: 54, height: 76, radius: 9),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(review.movie.title,
-                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
-                      const SizedBox(height: 5),
-                      StarRating(rating: review.rating, size: 18),
-                      const SizedBox(height: 5),
-                      Text(
-                        review.reviewRatingCount == 0
-                            ? 'No community ratings yet'
-                            : '${review.reviewRating.toStringAsFixed(1)}/5 from ${review.reviewRatingCount} community rating${review.reviewRatingCount == 1 ? '' : 's'}',
-                        style: Theme.of(context).textTheme.labelSmall,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        review.movie.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFB800),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Text(
+                        '${review.rating}/5',
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  'Movie  •  ${review.movie.year}  •  ${review.movie.genre}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 8),
+                Text(review.text, maxLines: 3, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 8),
+                Text(
+                  review.reviewRatingCount == 0
+                      ? 'No community ratings yet'
+                      : '${review.reviewRating.toStringAsFixed(1)}/5 • ${review.reviewRatingCount} community rating${review.reviewRatingCount == 1 ? '' : 's'}',
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+                if (review.imageUrls.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  ReviewPhotoGallery(imageUrls: review.imageUrls),
+                ],
               ],
             ),
-            const SizedBox(height: 10),
-            Text(review.text, maxLines: 4, overflow: TextOverflow.ellipsis),
-            if (review.imageUrls.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              ReviewPhotoGallery(imageUrls: review.imageUrls),
-            ],
-          ],
-        ),
+          ),
+        ],
       ),
     ),
   );
@@ -321,12 +358,21 @@ class ProfileScreen extends StatelessWidget {
       builder: (sheetContext) => StatefulBuilder(
         builder: (context, setSheetState) {
           final query = controller.text.trim().toLowerCase();
-          final matches = items.where((review) =>
-            query.isEmpty || review.movie.title.toLowerCase().contains(query) ||
-            review.text.toLowerCase().contains(query)).toList();
+          final matches = items
+              .where(
+                (review) =>
+                    query.isEmpty ||
+                    review.movie.title.toLowerCase().contains(query) ||
+                    review.text.toLowerCase().contains(query),
+              )
+              .toList();
           return Padding(
-            padding: EdgeInsets.fromLTRB(20, 4, 20,
-              MediaQuery.viewInsetsOf(context).bottom + 24),
+            padding: EdgeInsets.fromLTRB(
+              20,
+              4,
+              20,
+              MediaQuery.viewInsetsOf(context).bottom + 24,
+            ),
             child: SizedBox(
               height: MediaQuery.sizeOf(context).height * .65,
               child: Column(
@@ -349,11 +395,18 @@ class ProfileScreen extends StatelessWidget {
                             itemBuilder: (_, index) {
                               final review = matches[index];
                               return ListTile(
-                                leading: PosterArt(movie: review.movie,
-                                  width: 40, height: 56, radius: 7),
+                                leading: PosterArt(
+                                  movie: review.movie,
+                                  width: 40,
+                                  height: 56,
+                                  radius: 7,
+                                ),
                                 title: Text(review.movie.title),
-                                subtitle: Text(review.text,
-                                  maxLines: 2, overflow: TextOverflow.ellipsis),
+                                subtitle: Text(
+                                  review.text,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                                 onTap: () {
                                   Navigator.pop(sheetContext);
                                   onMovieTap(review.movie);
@@ -669,43 +722,147 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
-class _Stat extends StatelessWidget {
-  const _Stat({required this.value, required this.label, this.onTap});
-  final String value;
+class _ProfileInfoLine extends StatelessWidget {
+  const _ProfileInfoLine({required this.icon, required this.label, this.onTap});
+
+  final IconData icon;
   final String label;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) => InkWell(
-    key: ValueKey('profile-stat-${label.toLowerCase()}'),
     onTap: onTap,
-    borderRadius: BorderRadius.circular(14),
+    borderRadius: BorderRadius.circular(8),
     child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      child: Column(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            value,
-            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
+          Icon(icon, size: 20),
+          const SizedBox(width: 9),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
           ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              if (onTap != null) ...[
-                const SizedBox(width: 2),
-                const Icon(Icons.chevron_right_rounded, size: 15),
-              ],
-            ],
-          ),
+          if (onTap != null) const Icon(Icons.chevron_right_rounded, size: 18),
         ],
       ),
+    ),
+  );
+}
+
+class _InterestMovieCard extends StatelessWidget {
+  const _InterestMovieCard({required this.movie, required this.onTap});
+
+  final Movie movie;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: 220,
+    child: Material(
+      color: Theme.of(context).colorScheme.surfaceContainer,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Row(
+            children: [
+              PosterArt(movie: movie, width: 54, height: 78, radius: 8),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      movie.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      '${movie.year}  •  ${movie.genre}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _ProfileContentTabs extends StatelessWidget {
+  const _ProfileContentTabs();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    height: 62,
+    margin: const EdgeInsets.only(top: 22),
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surfaceContainerLowest,
+      border: Border(
+        top: BorderSide(color: Theme.of(context).dividerColor),
+        bottom: BorderSide(color: Theme.of(context).dividerColor),
+      ),
+    ),
+    child: Row(
+      children: [
+        Expanded(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              const Icon(Icons.edit_note_rounded, size: 27),
+              const SizedBox(height: 13),
+              Container(height: 2, color: Colors.white),
+            ],
+          ),
+        ),
+        const Expanded(
+          child: Center(child: Icon(Icons.playlist_play_rounded, size: 29)),
+        ),
+      ],
+    ),
+  );
+}
+
+class _Stat extends StatelessWidget {
+  const _Stat({required this.value, required this.label});
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    key: ValueKey('profile-stat-${label.toLowerCase()}'),
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+    child: Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
+        ),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
     ),
   );
 }
