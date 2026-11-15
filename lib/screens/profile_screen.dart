@@ -211,9 +211,8 @@ class ProfileScreen extends StatelessWidget {
                 },
               ),
             ),
-          const _ProfileContentTabs(),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 28, 12, 8),
+            padding: const EdgeInsets.fromLTRB(20, 32, 12, 8),
             child: Row(
               children: [
                 const Expanded(
@@ -801,40 +800,6 @@ class _InterestMovieCard extends StatelessWidget {
           ),
         ),
       ),
-    ),
-  );
-}
-
-class _ProfileContentTabs extends StatelessWidget {
-  const _ProfileContentTabs();
-
-  @override
-  Widget build(BuildContext context) => Container(
-    height: 62,
-    margin: const EdgeInsets.only(top: 22),
-    decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.surfaceContainerLowest,
-      border: Border(
-        top: BorderSide(color: Theme.of(context).dividerColor),
-        bottom: BorderSide(color: Theme.of(context).dividerColor),
-      ),
-    ),
-    child: Row(
-      children: [
-        Expanded(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              const Icon(Icons.edit_note_rounded, size: 27),
-              const SizedBox(height: 13),
-              Container(height: 2, color: Colors.white),
-            ],
-          ),
-        ),
-        const Expanded(
-          child: Center(child: Icon(Icons.playlist_play_rounded, size: 29)),
-        ),
-      ],
     ),
   );
 }

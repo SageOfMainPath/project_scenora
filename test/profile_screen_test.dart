@@ -71,6 +71,8 @@ void main() {
 
     expect(find.text('Persisted Movie'), findsOneWidget);
     expect(find.textContaining('Saved in Supabase'), findsOneWidget);
+    expect(find.byIcon(Icons.edit_note_rounded), findsNothing);
+    expect(find.byIcon(Icons.playlist_play_rounded), findsNothing);
   });
 
   testWidgets('guest never sees a previous account watchlist', (tester) async {
