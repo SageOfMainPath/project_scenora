@@ -31,10 +31,20 @@ Future<void> main(List<String> arguments) async {
       await _printCounts(connection);
       return;
     }
+    if (arguments.contains('--clear-messages') &&
+        arguments.contains('--confirm=CLEAR_SHOUTBOX')) {
+      final before = await _count(connection, 'messages');
+      stdout.writeln('messages before: $before');
+      await connection.execute('delete from scenora.messages');
+      final after = await _count(connection, 'messages');
+      stdout.writeln('messages after: $after');
+      return;
+    }
     if (!arguments.contains('--reset') ||
         !arguments.contains('--confirm=RESET_SCENORA')) {
       stdout.writeln(
-        'Use --status, or --reset --confirm=RESET_SCENORA to erase accounts and community data.',
+        'Use --status, --clear-messages --confirm=CLEAR_SHOUTBOX, or '
+        '--reset --confirm=RESET_SCENORA.',
       );
       return;
     }
@@ -63,6 +73,13 @@ Future<void> main(List<String> arguments) async {
   } finally {
     await connection.close();
   }
+}
+
+Future<int> _count(Connection connection, String table) async {
+  final result = await connection.execute(
+    'select count(*) from scenora.$table',
+  );
+  return result.first.first as int;
 }
 
 Future<void> _printCounts(Connection connection) async {

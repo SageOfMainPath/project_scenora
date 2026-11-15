@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../models/scenora_models.dart';
 import '../widgets/scenora_widgets.dart';
+import 'public_profile_screen.dart';
 
 class UserConnectionsScreen extends StatefulWidget {
   const UserConnectionsScreen({
@@ -8,12 +10,16 @@ class UserConnectionsScreen extends StatefulWidget {
     required this.title,
     required this.currentUserId,
     required this.loadUsers,
+    required this.loadUser,
+    required this.loadReviews,
     required this.onToggleFollow,
   });
 
   final String title;
   final String currentUserId;
   final Future<List<Map<String, dynamic>>> Function() loadUsers;
+  final Future<Map<String, dynamic>> Function(String userId) loadUser;
+  final Future<List<Review>> Function(String userId) loadReviews;
   final Future<bool?> Function(String userId) onToggleFollow;
 
   @override
@@ -122,6 +128,17 @@ class _UserConnectionsScreenState extends State<UserConnectionsScreen> {
               return ListTile(
                 key: ValueKey('connection-$userId'),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                onTap: () => Navigator.of(context).push<void>(
+                  MaterialPageRoute(
+                    builder: (_) => PublicProfileScreen(
+                      initialUser: user,
+                      currentUserId: widget.currentUserId,
+                      loadUser: () => widget.loadUser(userId),
+                      loadReviews: () => widget.loadReviews(userId),
+                      onToggleFollow: () => widget.onToggleFollow(userId),
+                    ),
+                  ),
+                ),
                 leading: UserAvatar(
                   name: name,
                   color: const Color(0xFF5F6BEA),

@@ -115,6 +115,19 @@ void main() {
       expect(movies.body['source'], 'demo-cache');
       expect(movies.body['items'], isNotEmpty);
 
+      final drama = await request(
+        'GET',
+        '/movies/discover?genre=Drama&limit=20',
+      );
+      expect(drama.status, 200);
+      expect(drama.body['items'], isNotEmpty);
+
+      final unsupportedGenre = await request(
+        'GET',
+        '/movies/discover?genre=Unknown',
+      );
+      expect(unsupportedGenre.status, 400);
+
       final savedMovie = await request(
         'POST',
         '/watchlist/693134',

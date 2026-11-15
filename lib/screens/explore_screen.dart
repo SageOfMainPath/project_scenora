@@ -16,6 +16,7 @@ class ExploreScreen extends StatefulWidget {
     required this.onWriteReview,
     required this.onSearch,
     required this.onLoadPopular,
+    required this.onLoadGenre,
     required this.reviews,
     required this.requireAuth,
     required this.onRateReview,
@@ -26,6 +27,7 @@ class ExploreScreen extends StatefulWidget {
   final ValueChanged<Movie?> onWriteReview;
   final Future<List<Movie>> Function(String query) onSearch;
   final Future<List<Movie>> Function() onLoadPopular;
+  final Future<List<Movie>> Function(String genre) onLoadGenre;
   final List<Review> reviews;
   final Future<bool> Function(String reason) requireAuth;
   final Future<({double score, int count, int viewerRating})?> Function(
@@ -44,6 +46,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   String _genre = 'All';
   List<Movie> _remoteResults = const [];
   List<Movie> _popularResults = const [];
+  final Map<String, List<Movie>> _genreResults = {};
   Timer? _searchTimer;
   bool _searching = false;
   String? _searchError;
@@ -51,14 +54,41 @@ class _ExploreScreenState extends State<ExploreScreen> {
   List<Movie> get _popularMovies =>
       _popularResults.isEmpty ? movies : _popularResults;
 
-  List<Movie> get _results => (_query.isEmpty ? _popularMovies : _remoteResults)
-      .where(
-        (movie) =>
-            (_query.isEmpty ||
-                movie.title.toLowerCase().contains(_query.toLowerCase())) &&
-            (_genre == 'All' || movie.genre.contains(_genre)),
-      )
-      .toList();
+  List<Movie> get _results =>
+      (_query.isEmpty
+              ? (_genre == 'All'
+                    ? _popularMovies
+                    : (_genreResults[_genre] ?? _popularMovies))
+              : _remoteResults)
+          .where(
+            (movie) =>
+                (_query.isEmpty ||
+                    movie.title.toLowerCase().contains(_query.toLowerCase())) &&
+                (_genre == 'All' || movie.genre.contains(_genre)),
+          )
+          .toList();
+
+  Future<void> _selectGenre(String genre) async {
+    setState(() {
+      _genre = genre;
+      _searchError = null;
+    });
+    if (genre == 'All' ||
+        _query.isNotEmpty ||
+        _genreResults.containsKey(genre)) {
+      return;
+    }
+    setState(() => _searching = true);
+    try {
+      final movies = await widget.onLoadGenre(genre);
+      if (!mounted || _genre != genre) return;
+      setState(() => _genreResults[genre] = movies);
+    } catch (error) {
+      if (mounted && _genre == genre) setState(() => _searchError = '$error');
+    } finally {
+      if (mounted && _genre == genre) setState(() => _searching = false);
+    }
+  }
 
   @override
   void initState() {
@@ -183,7 +213,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     color: _genre == genre ? Colors.white : null,
                     fontWeight: FontWeight.w700,
                   ),
-                  onSelected: (_) => setState(() => _genre = genre),
+                  onSelected: (_) => _selectGenre(genre),
                 );
               },
               separatorBuilder: (_, _) => const SizedBox(width: 7),

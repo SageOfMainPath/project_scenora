@@ -181,6 +181,16 @@ class ScenoraApiClient {
         .toList();
   }
 
+  Future<List<Movie>> discoverMovies(String genre) async {
+    final result = await _request(
+      'GET',
+      '/movies/discover?genre=${Uri.encodeQueryComponent(genre)}&limit=20',
+    );
+    return (result['items'] as List<dynamic>? ?? const [])
+        .map((item) => _movie(item as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<List<Movie>> watchlist() async {
     final result = await _request('GET', '/watchlist', authenticated: true);
     return (result['items'] as List<dynamic>? ?? const [])
@@ -283,6 +293,15 @@ class ScenoraApiClient {
     final result = await _request('GET', '/users/me', authenticated: true);
     currentUser = result['user'] as Map<String, dynamic>;
     return currentUser!;
+  }
+
+  Future<Map<String, dynamic>> publicProfile(String userId) async {
+    final result = await _request(
+      'GET',
+      '/users/${Uri.encodeComponent(userId)}',
+      authenticated: isLoggedIn,
+    );
+    return result['user'] as Map<String, dynamic>;
   }
 
   Future<List<ActivityItem>> activity() async {

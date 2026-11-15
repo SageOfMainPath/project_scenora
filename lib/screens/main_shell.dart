@@ -448,6 +448,8 @@ class _MainShellState extends State<MainShell> {
           currentUserId: userId,
           loadUsers: () =>
               followers ? _api.followers(userId) : _api.following(userId),
+          loadUser: _api.publicProfile,
+          loadReviews: _api.reviewsForUser,
           onToggleFollow: _toggleFollowUser,
         ),
       ),
@@ -585,6 +587,7 @@ class _MainShellState extends State<MainShell> {
         onWriteReview: _openComposer,
         onSearch: _api.searchMovies,
         onLoadPopular: _api.popularMovies,
+        onLoadGenre: _api.discoverMovies,
         requireAuth: _ensureAuthenticated,
         onRateReview: _rateReview,
         loadMovieReviews: _api.reviewsForMovie,

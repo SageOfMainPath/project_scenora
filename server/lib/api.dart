@@ -40,6 +40,7 @@ class ScenoraApi {
       ..get('/users/<id>/following', _following)
       ..get('/movies/search', _searchMovies)
       ..get('/movies/popular', _popularMovies)
+      ..get('/movies/discover', _discoverMovies)
       ..get('/movies/<id>', _getMovie)
       ..get('/watchlist', _watchlist)
       ..post('/watchlist/<movieId>', _toggleWatchlist)
@@ -82,7 +83,7 @@ class ScenoraApi {
   Response _health(Request request) => _ok({
     'status': 'ok',
     'service': 'scenora-backend',
-    'version': '1.10.0',
+    'version': '1.11.0',
     'database': store.persistence,
     'time': DateTime.now().toUtc().toIso8601String(),
   });
@@ -401,6 +402,35 @@ class ScenoraApi {
     return _ok({
       'source': remote == null ? 'demo-cache' : 'tmdb',
       'items': remote ?? store.table('movies'),
+    });
+  }
+
+  Future<Response> _discoverMovies(Request request) async {
+    final genre = request.url.queryParameters['genre']?.trim() ?? '';
+    final genreId = _tmdbGenreIds[genre];
+    if (genreId == null) return _error(400, 'Unsupported movie genre.');
+    final now = DateTime.now().toUtc();
+    final recentStart = DateTime.utc(now.year - 4, 1, 1);
+    String date(DateTime value) =>
+        '${value.year.toString().padLeft(4, '0')}-'
+        '${value.month.toString().padLeft(2, '0')}-'
+        '${value.day.toString().padLeft(2, '0')}';
+    final remote = await _tmdb('/discover/movie', {
+      'with_genres': '$genreId',
+      'sort_by': 'popularity.desc',
+      'primary_release_date.gte': date(recentStart),
+      'primary_release_date.lte': date(now),
+      'vote_count.gte': '20',
+      'include_adult': 'false',
+    });
+    if (remote != null) await _cacheMovies(remote);
+    final fallback = store
+        .table('movies')
+        .where((movie) => '${movie['genre'] ?? ''}'.contains(genre))
+        .toList();
+    return _ok({
+      'source': remote == null ? 'cache' : 'tmdb',
+      'items': (remote ?? fallback).take(_limit(request)).toList(),
     });
   }
 
@@ -1087,6 +1117,14 @@ class ScenoraApi {
     53: 'Thriller',
     10752: 'War',
     37: 'Western',
+  };
+
+  static const Map<String, int> _tmdbGenreIds = {
+    'Drama': 18,
+    'Sci-Fi': 878,
+    'Action': 28,
+    'Comedy': 35,
+    'Romance': 10749,
   };
 
   Future<Map<String, dynamic>> _body(Request request) async {

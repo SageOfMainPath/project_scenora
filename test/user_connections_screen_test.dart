@@ -18,6 +18,15 @@ void main() {
               'isFollowing': false,
             },
           ],
+          loadUser: (userId) async => {
+            'id': userId,
+            'displayName': 'Rony',
+            'username': 'rony',
+            'isFollowing': true,
+            'followerCount': 1,
+            'followingCount': 2,
+          },
+          loadReviews: (userId) async => [],
           onToggleFollow: (userId) async {
             toggles++;
             return true;
@@ -36,5 +45,13 @@ void main() {
 
     expect(toggles, 1);
     expect(find.text('Following'), findsOneWidget);
+
+    await tester.tap(find.text('Rony'));
+    await tester.pumpAndSettle();
+    expect(find.text('Reviews'), findsWidgets);
+    expect(
+      find.text('This user has not written any reviews yet.'),
+      findsOneWidget,
+    );
   });
 }
