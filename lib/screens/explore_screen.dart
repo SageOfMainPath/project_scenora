@@ -611,27 +611,29 @@ class _PremieresLaunchesState extends State<_PremieresLaunches> {
             title: 'Premieres & launches',
             subtitle: 'Released recently or arriving in the next two months',
           ),
-          SizedBox(
-            height: 46,
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-              scrollDirection: Axis.horizontal,
-              itemCount: 5,
-              separatorBuilder: (_, _) => const SizedBox(width: 7),
-              itemBuilder: (_, index) {
-                final label = const [
-                  'All',
-                  'Upcoming',
-                  'Trailers',
-                  'Bollywood',
-                  'Hollywood',
-                ][index];
-                return ChoiceChip(
-                  label: Text(label),
-                  selected: _filter == label,
-                  onSelected: (_) => setState(() => _filter = label),
-                );
-              },
+          _DiscoveryTextTabs(
+            labels: const [
+              'All  40',
+              'Upcoming  22',
+              'Trailers  32',
+              'Bollywood  18',
+              'Hollywood  22',
+            ],
+            selectedIndex: const [
+              'All',
+              'Upcoming',
+              'Trailers',
+              'Bollywood',
+              'Hollywood',
+            ].indexOf(_filter),
+            onSelected: (index) => setState(
+              () => _filter = const [
+                'All',
+                'Upcoming',
+                'Trailers',
+                'Bollywood',
+                'Hollywood',
+              ][index],
             ),
           ),
           SizedBox(
@@ -756,34 +758,43 @@ class _DirectorsVaultState extends State<_DirectorsVault> {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _directors[_selected],
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _directors[_selected],
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
-                        ),
-                        Text(
-                          '${films.length}+ essential films',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
+                          Text(
+                            '${films.length}+ essential films',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 14),
                 SizedBox(
-                  height: 205,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
+                  height: 405,
+                  child: GridView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          childAspectRatio: .56,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 12,
+                        ),
                     itemCount: films.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 10),
                     itemBuilder: (_, index) => _MovieTile(
                       movie: films[index],
-                      width: 112,
                       onTap: () => widget.onOpen(films[index]),
                     ),
                   ),
@@ -827,27 +838,29 @@ class _FranchiseShowcaseState extends State<_FranchiseShowcase> {
             title: 'Franchises & sagas',
             subtitle: 'Cinema’s biggest universes and timeless worlds',
           ),
-          SizedBox(
-            height: 44,
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-              scrollDirection: Axis.horizontal,
-              itemCount: 5,
-              separatorBuilder: (_, _) => const SizedBox(width: 7),
-              itemBuilder: (_, index) {
-                final name = const [
-                  'Marvel / MCU',
-                  'Harry Potter',
-                  'DC Universe',
-                  'Star Wars',
-                  'Middle-earth',
-                ][index];
-                return ChoiceChip(
-                  label: Text(name),
-                  selected: _selected == name,
-                  onSelected: (_) => setState(() => _selected = name),
-                );
-              },
+          _DiscoveryTextTabs(
+            labels: const [
+              'Marvel / MCU',
+              'Harry Potter',
+              'DC Universe',
+              'Star Wars',
+              'Middle-earth',
+            ],
+            selectedIndex: const [
+              'Marvel / MCU',
+              'Harry Potter',
+              'DC Universe',
+              'Star Wars',
+              'Middle-earth',
+            ].indexOf(_selected),
+            onSelected: (index) => setState(
+              () => _selected = const [
+                'Marvel / MCU',
+                'Harry Potter',
+                'DC Universe',
+                'Star Wars',
+                'Middle-earth',
+              ][index],
             ),
           ),
           SizedBox(
@@ -1186,6 +1199,56 @@ class _GenreBrowser extends StatelessWidget {
           ],
         ),
       ],
+    ),
+  );
+}
+
+class _DiscoveryTextTabs extends StatelessWidget {
+  const _DiscoveryTextTabs({
+    required this.labels,
+    required this.selectedIndex,
+    required this.onSelected,
+  });
+
+  final List<String> labels;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: 48,
+    child: ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      scrollDirection: Axis.horizontal,
+      itemCount: labels.length,
+      separatorBuilder: (_, _) => const SizedBox(width: 24),
+      itemBuilder: (_, index) {
+        final selected = selectedIndex == index;
+        return InkWell(
+          onTap: () => onSelected(index),
+          child: Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.only(top: 3),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: selected ? ScenoraTheme.gold : Colors.transparent,
+                  width: 2,
+                ),
+              ),
+            ),
+            child: Text(
+              labels[index],
+              style: TextStyle(
+                color: selected
+                    ? Theme.of(context).colorScheme.onSurface
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+              ),
+            ),
+          ),
+        );
+      },
     ),
   );
 }
